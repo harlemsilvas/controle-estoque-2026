@@ -1,0 +1,17 @@
+# Próximos passos pendentes do projeto
+
+- Adicionar gráficos para visualização de estoque (corrigir falha)
+- Implementar ação de "resolver" alerta de estoque mínimo (marcar como resolvido)
+- Implementar restauração de produtos excluídos (soft delete)
+- Criar lixeira virtual para produtos excluídos
+- Adicionar histórico de alterações dos produtos
+- Adicionar filtros por período/data nas listagens
+- Implementar exportação de relatórios (PDF/Excel)
+- Criar gráfico de histórico de movimentações
+- Adicionar métricas resumidas (cards com números)
+- Adicionar notificações por e-mail
+- Implementar prioridade de alertas
+- Criar relatório de alertas recorrentes
+- Adicionar comentários aos alertas
+
+Obs: Cadastro, alteração, exclusão e listagem de família já estão funcionais, apenas corrigir erro na exclusão.

@@ -1,0 +1,48 @@
+Próximos Passos:
+
+    Adicionar busca/filtro na listagem de produtos ok
+
+    Implementar formulário para adicionar/editar produtos ok
+
+    Adicionar gráficos para visualização de estoque  - falhou
+ 
+    Implementar sistema de alertas para estoque mínimo - ok - falta clicar como resolvido implementar
+
+Próximos Passos:
+
+    Adicionar notificações toast para feedback das ações - ok
+
+    Implementar restauração de produtos excluídos (soft delete)
+
+    Criar lixeira virtual para produtos excluídos ******
+
+    Adicionar histórico de alterações
+
+Próximos Passos:
+
+    Adicionar filtros por período/data
+
+    Implementar exportação de relatórios (PDF/Excel)
+
+    Criar gráfico de histórico de movimentações
+
+    Adicionar métricas resumidas (cards com números)
+
+
+
+Próximos Passos:
+
+    Adicionar notificações por e-mail
+
+    Implementar prioridade de alertas
+
+    Criar relatório de alertas recorrentes
+
+    Adicionar comentários aos alertas
+
+
+Vamos criar as rotas de cadastro de Famila, e devem ficar na mesma pagina Cadastro,
+Alteração, Exclusão e a Listagem, sendo reenderizados quando necessário.  - ok - funcional, só erro na hora de excluir
+
+
+https://www.google.com/url?q=https://drive.google.com/drive/folders/1abQACmG8vajM2NercFQXsdEHyabS124N?usp%3Dsharing&sa=D&source=editors&ust=1744166581608814&usg=AOvVaw0uVoUwRNPj8GfFWPU-FwCn

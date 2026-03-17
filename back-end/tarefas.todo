@@ -1,0 +1,12 @@
+
+Tarefas concluídas:
+- [x] Adicionar paginação na listagem de produtos (backend e frontend)
+- [x] Adicionar filtro por Fornecedor
+- [x] Adicionar filtro por Marca
+
+Tarefa em andamento:
+- [ ] Adicionar ordenação por nome/código (backend e frontend)
+
+O backend atualmente retorna todas as marcas, fornecedores e famílias sem paginação, usando métodos como getAll() em cada model.  Adicionar métodos paginados nos models (getPaginated), aceitando parâmetros page e limit, e retornando { data, total, totalPages }.
+Atualizar os services para expor listarPaginado(page, limit).
+Atualizar os controllers para aceitar query params page e limit e retornar o formato paginado. começar implementando a paginação para marcas

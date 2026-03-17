@@ -1,0 +1,58 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+**/dist/
+**/dist-ssr/
+**/.vite/
+coverage/
+
+# Runtime / temp
+*.pid
+*.seed
+*.pid.lock
+*.tmp
+*.temp
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Project specific
+.sem-uso/
+.antigos/
+front-end/sql-instrucoes/
+*.bak
+*-COPIA.*
+*.copy.*
+deploy/production/logs/
+deploy/production/backend/.env
+deploy/production/frontend/.env.production
+
+# Keep deploy scripts and docs, ignore generated deploy artifacts
+deploy/production/backend/dist/
+deploy/production/frontend/dist/
