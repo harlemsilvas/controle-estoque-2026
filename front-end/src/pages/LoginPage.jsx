@@ -25,9 +25,24 @@ const LoginPage = () => {
       });
 
       if (!response.ok) {
-        // Lança um erro com a mensagem do backend, se houver
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Credenciais inválidas");
+        // Backend pode retornar HTML (ex.: 502 do IIS), então evita parse JSON cego.
+        const responseText = await response.text();
+        let backendMessage = "";
+
+        try {
+          const parsed = JSON.parse(responseText);
+          backendMessage = parsed?.error || parsed?.message || "";
+        } catch {
+          backendMessage = "";
+        }
+
+        if (response.status >= 500) {
+          throw new Error(
+            backendMessage || "Servidor indisponível no momento. Tente novamente.",
+          );
+        }
+
+        throw new Error(backendMessage || "Credenciais inválidas");
       }
 
       const data = await response.json();

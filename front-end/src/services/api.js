@@ -205,7 +205,7 @@ export const excluirPermanentemente = async (id, cascade = false) => {
 export const getLixeiraCount = async () => {
   try {
     const response = await api.get("/produto/lixeira/count");
-    return response.data.count;
+    return response.data;
   } catch (error) {
     throw new Error(
       error.response?.data?.message || "Erro ao buscar contagem da lixeira"

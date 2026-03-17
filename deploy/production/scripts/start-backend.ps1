@@ -4,10 +4,40 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $deployRoot = Split-Path -Parent $scriptDir
 $backendDir = Join-Path $deployRoot 'backend'
 $logsDir = Join-Path $deployRoot 'logs'
+$backendEnvPath = Join-Path $backendDir '.env'
 
 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 
-$env:PORT = if ($env:PORT) { $env:PORT } else { '4300' }
+function Import-DotEnv {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Path
+  )
+
+  if (-not (Test-Path $Path)) {
+    return
+  }
+
+  Get-Content $Path | ForEach-Object {
+    $line = $_.Trim()
+    if (-not $line -or $line.StartsWith('#')) {
+      return
+    }
+
+    $parts = $line.Split('=', 2)
+    if ($parts.Count -ne 2) {
+      return
+    }
+
+    $name = $parts[0].Trim()
+    $value = $parts[1].Trim().Trim('"').Trim("'")
+    Set-Item -Path ("Env:{0}" -f $name) -Value $value
+  }
+}
+
+Import-DotEnv -Path $backendEnvPath
+
+$env:PORT = if ($env:PORT) { $env:PORT } else { '3000' }
 $env:NODE_ENV = 'production'
 
 function Get-NodeExecutable {

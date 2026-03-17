@@ -28,6 +28,9 @@ connectToDatabase().catch((err) => {
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Confiar no proxy (importante para produção com nginx/reverse proxy)
+app.set('trust proxy', true);
+
 // CORS configuration
 // localhost origins (dev + production local) + LAN sub-rede 192.168.0.x
 const allowedOrigins = [
@@ -37,6 +40,9 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
+  'http://estoque.local',
+  'https://estoque.local',  // ← ADICIONAR ESTA LINHA!
+  /^https?:\/\/192\.168\.0\.\d+(:\d+)?$/,
 ];
 
 function isAllowedOrigin(origin: string | undefined): boolean {

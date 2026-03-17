@@ -225,7 +225,7 @@ Antes de executar `register-startup-tasks.ps1`, verifique:
 - [ ] `deploy/production/frontend/dist/index.html` existe
 - [ ] `deploy/production/frontend/dist/assets/` contém .js, .css, .png, etc
 - [ ] `deploy/production/scripts/serve-frontend.js` existe
-- [ ] `.env.production` em front-end/ contém `VITE_API_BASE_URL=http://localhost:4300`
+- [ ] `.env.production` em front-end/ contém `VITE_API_BASE_URL=` para usar a mesma origem HTTPS do site
 - [ ] Testou server localmente: `cd deploy/production/scripts && node serve-frontend.js`
 
 ### Scripts & Paths

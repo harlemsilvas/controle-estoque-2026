@@ -22,8 +22,8 @@ const Header = ({ title, btnText, btnPath }) => {
   useEffect(() => {
     const loadCount = async () => {
       try {
-        const { count } = await getLixeiraCount();
-        setDeletedCount(count);
+        const result = await getLixeiraCount();
+        setDeletedCount(Number(result?.count ?? 0));
       } catch (error) {
         console.error("Erro ao carregar contagem da lixeira:", error);
       }

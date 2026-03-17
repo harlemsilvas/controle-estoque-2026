@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import Header from "../components/Header";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import {
   deleteProduto,
@@ -15,6 +15,7 @@ import ProdutosTable from "../components/ProdutosTable";
 import { buildApiUrl } from "../config/apiBaseUrl";
 
 const Produtos = () => {
+  const navigate = useNavigate();
   const getOptionId = (option) =>
     option?.CODIGO || option?.id || option?.codigo || "sem-id";
   const [produtos, setProdutos] = useState([]);
@@ -294,11 +295,9 @@ const Produtos = () => {
         </div>
         <ProdutosTable
           produtos={Array.isArray(produtos) ? produtos : []}
-          onEdit={(codigo) =>
-            (window.location.href = `/produto/editar/${codigo}`)
-          }
+          onEdit={(codigo) => navigate(`/produto/editar/${codigo}`)}
           onDelete={handleDelete}
-          onView={(codigo) => (window.location.href = `/produto/${codigo}`)}
+          onView={(codigo) => navigate(`/produto/${codigo}`)}
           loading={loading}
           orderBy={orderBy}
           orderDir={orderDir}
@@ -308,9 +307,7 @@ const Produtos = () => {
         {/* ProdutosGrid mantido para backup:
         <ProdutosGrid
           produtos={Array.isArray(produtos) ? produtos : []}
-          onEdit={(codigo) =>
-            (window.location.href = `/produto/editar/${codigo}`)
-          }
+          onEdit={(codigo) => navigate(`/produto/editar/${codigo}`)}
           onDelete={handleDelete}
           loading={loading}
           searchTerm={searchTerm}

@@ -1,0 +1,2 @@
+﻿Copy-Item "C:\controle-estoque\front-end\dist\index.html" "C:\inetpub\controle-estoque-proxy\index.html" -Force
+Copy-Item "C:\controle-estoque\front-end\dist\assets\*" "C:\inetpub\controle-estoque-proxy\assets\" -Recurse -Force

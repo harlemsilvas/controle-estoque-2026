@@ -18,7 +18,7 @@ Colocar o projeto em operacao de forma estavel no Windows, com inicializacao aut
 
 - O frontend usa Vite e gera build em `front-end/dist`.
 - O frontend agora usa helper central para a base da API e suporta `VITE_API_BASE_URL`.
-- O build de producao foi padronizado para apontar para `http://localhost:4300`.
+- Em producao com IIS/proxy HTTPS, o frontend deve usar a mesma origem do site, sem host absoluto em HTTP.
 - Existe uma pasta materializada de deploy em `deploy/production`.
 
 ## Bloqueios atuais para producao
@@ -36,7 +36,7 @@ Impacto:
 - Obriga rebuild manual sempre que o endereco do backend mudar.
 - Aumenta risco de erro ao mover para outra maquina.
 
-### 2. Frontend e backend ainda nao estao desacoplados para um runtime unico
+### 2. Frontend e backend ainda nao estao totalmente padronizados para um runtime unico
 
 Hoje existem dois caminhos possiveis de producao:
 
@@ -45,8 +45,8 @@ Hoje existem dois caminhos possiveis de producao:
 - Frontend sobe como site estatico em outra porta, por exemplo `4173`.
 
 2. Modelo ideal:
-- Backend exposto sob prefixo `/api`.
-- Frontend servido no mesmo host e mesma porta via reverse proxy ou runtime unificado.
+- Backend exposto no mesmo host via reverse proxy.
+- Frontend servido no mesmo host e mesma porta publica, evitando CORS e mixed content.
 
 No estado atual, o modelo minimo e o mais seguro para colocar em producao sem refactor amplo.
 
@@ -123,15 +123,16 @@ DB_PORT=1433
 
 ### Frontend
 
-Para a proxima etapa, o ideal e padronizar:
+Para producao com HTTPS publicado no IIS, padronizar:
 
 ```env
-VITE_API_BASE_URL=http://SEU_HOST:4300
+VITE_API_BASE_URL=
 ```
 
 Observacao:
 
-Essa variavel ja foi aplicada no runtime principal do frontend.
+- Valor vazio faz o frontend usar a mesma origem do navegador.
+- Isso evita mixed content quando o site esta em `https://...` e o backend esta por tras de proxy interno.
 
 ## Checklist de validacao antes de subir como servico
 
