@@ -1,5 +1,13 @@
 const trimTrailingSlash = (value = "") => value.replace(/\/+$/, "");
 
+const isSameHostname = (configuredUrl) => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return configuredUrl.hostname === window.location.hostname;
+};
+
 const defaultApiBaseUrl = import.meta.env.DEV ? "http://localhost:3000" : "";
 
 const resolveBrowserSafeApiBaseUrl = (configuredValue) => {
@@ -17,8 +25,14 @@ const resolveBrowserSafeApiBaseUrl = (configuredValue) => {
     const configuredUrl = new URL(normalizedValue, window.location.origin);
     const isHttpsPage = window.location.protocol === "https:";
     const isSameHost = configuredUrl.host === window.location.host;
+    const isSameHostNameOnly = isSameHostname(configuredUrl);
 
-    if (isHttpsPage && configuredUrl.protocol === "http:" && isSameHost) {
+    // Avoid mixed-content requests when the app is served over HTTPS.
+    if (
+      isHttpsPage &&
+      configuredUrl.protocol === "http:" &&
+      (isSameHost || isSameHostNameOnly)
+    ) {
       return trimTrailingSlash(
         `${window.location.origin}${configuredUrl.pathname}`,
       );
