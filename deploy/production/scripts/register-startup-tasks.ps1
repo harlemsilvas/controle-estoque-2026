@@ -1,29 +1,31 @@
 $ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$backendScript = Join-Path $scriptDir 'start-backend.ps1'
-$frontendScript = Join-Path $scriptDir 'start-frontend.ps1'
+$bootstrapScript = Join-Path $scriptDir 'startup-bootstrap.ps1'
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -MultipleInstances IgnoreNew -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
 
-$backendTrigger = New-ScheduledTaskTrigger -AtStartup
-$backendTrigger.Delay = 'PT20S'
-$frontendTrigger = New-ScheduledTaskTrigger -AtStartup
-$frontendTrigger.Delay = 'PT35S'
+$startupTrigger = New-ScheduledTaskTrigger -AtStartup
+$startupTrigger.Delay = 'PT90S'
 
-$backendAction = New-ScheduledTaskAction -Execute 'powershell.exe' -WorkingDirectory $scriptDir -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$backendScript`""
-$frontendAction = New-ScheduledTaskAction -Execute 'powershell.exe' -WorkingDirectory $scriptDir -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$frontendScript`""
+$startupAction = New-ScheduledTaskAction -Execute 'powershell.exe' -WorkingDirectory $scriptDir -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$bootstrapScript`""
 
-$backendTaskName = 'ControleEstoqueBackend'
-$frontendTaskName = 'ControleEstoqueFrontend'
+$stackTaskName = 'ControleEstoqueStack'
 
-Unregister-ScheduledTask -TaskName $backendTaskName -Confirm:$false -ErrorAction SilentlyContinue
-Unregister-ScheduledTask -TaskName $frontendTaskName -Confirm:$false -ErrorAction SilentlyContinue
+# Legacy tasks from previous setup
+$legacyTaskNames = @(
+	'ControleEstoqueBackend',
+	'ControleEstoqueFrontend'
+)
 
-Register-ScheduledTask -TaskName $backendTaskName -Action $backendAction -Trigger $backendTrigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
-Register-ScheduledTask -TaskName $frontendTaskName -Action $frontendAction -Trigger $frontendTrigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
+foreach ($legacyTask in $legacyTaskNames) {
+	Unregister-ScheduledTask -TaskName $legacyTask -Confirm:$false -ErrorAction SilentlyContinue
+}
 
-Get-ScheduledTask -TaskName $backendTaskName -ErrorAction Stop | Out-Null
-Get-ScheduledTask -TaskName $frontendTaskName -ErrorAction Stop | Out-Null
+Unregister-ScheduledTask -TaskName $stackTaskName -Confirm:$false -ErrorAction SilentlyContinue
 
-Write-Host 'Tarefas de inicializacao registradas com sucesso.'
+Register-ScheduledTask -TaskName $stackTaskName -Action $startupAction -Trigger $startupTrigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
+
+Get-ScheduledTask -TaskName $stackTaskName -ErrorAction Stop | Out-Null
+
+Write-Host 'Tarefa de inicializacao registrada com sucesso (delay de 90s): ControleEstoqueStack'

@@ -49,7 +49,9 @@ Set-Location C:\controle-estoque\deploy\production\scripts
 .\register-startup-tasks.ps1
 ```
 
-Isso cria duas tarefas agendadas para subir backend e frontend no boot do Windows.
+Isso cria uma tarefa agendada unica (`ControleEstoqueStack`) para subir a stack no boot do Windows com delay de 90 segundos.
+
+O bootstrap usa PM2 para backend e frontend com restart automatico em caso de falha.
 
 ## Revisao antes de ativar no boot
 
@@ -57,6 +59,10 @@ Antes de registrar as tarefas, revisar:
 
 - `C:\controle-estoque\deploy\production\QUICK-VERIFY.md`
 - `C:\controle-estoque\deploy\production\STARTUP-FLOWCHART.md`
+- `C:\controle-estoque\deploy\production\PLANTAO-RAPIDO.md`
+- `C:\controle-estoque\deploy\production\COMANDOS-DIARIOS.md`
+- `C:\controle-estoque\deploy\production\GO-LIVE-CHECKLIST.md`
+- `C:\controle-estoque\deploy\production\TEMPLATE-INCIDENTE.md`
 
 Ordem recomendada:
 
