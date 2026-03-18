@@ -82,6 +82,18 @@ app.use((req, res, next) => {
 });
 app.use(express.json());
 
+function healthHandler(_req: express.Request, res: express.Response) {
+  res.status(200).json({
+    status: 'ok',
+    service: 'controle-estoque-backend',
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+}
+
+app.get('/health', healthHandler);
+app.get('/saude', healthHandler);
+
 // Relatório de movimentações de estoque
 app.get('/relatorio/movimentacoes', relatorioMovimentacoes);
 // Estoque resumo (15 mais e 15 menos)
