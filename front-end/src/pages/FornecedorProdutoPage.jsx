@@ -1,7 +1,9 @@
+import { useAuth } from "../hooks/useAuth";
 import React, { useState, useEffect } from "react";
 import { toastSuccess, toastError } from "../services/toast";
 import FornecedorForm from "../components/FornecedorForm";
 import ConfirmationModal from "../components/ConfirmationModal";
+import CatalogoFornecedor from "../components/CatalogoFornecedor";
 import Header from "../components/Header";
 import {
   getFornecedor,
@@ -17,6 +19,8 @@ const MODES = {
 };
 
 const FornecedorProdutoPage = () => {
+  const { can } = useAuth();
+  const [catalogo, setCatalogo] = useState(null);
   const [fornecedores, setFornecedores] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFornecedor, setSelectedFornecedor] = useState(null);
@@ -122,14 +126,14 @@ const FornecedorProdutoPage = () => {
     <>
       <Header title={"Cadastro de fornecedores"} />
       <div className="min-h-screen bg-gray-50 p-6">
-        {mode === MODES.LIST ? (
+        {catalogo ? <CatalogoFornecedor fornecedor={catalogo} onClose={() => setCatalogo(null)} /> : mode === MODES.LIST ? (
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-bold text-gray-800">
                 Fornecedores de Produtos
               </h1>
               <button
-                onClick={() => setMode(MODES.CREATE)}
+                disabled={!can("suppliers.create")} onClick={() => setMode(MODES.CREATE)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Criar novo fornecedor"
               >
@@ -180,12 +184,14 @@ const FornecedorProdutoPage = () => {
                         <td className="px-6 py-4">{fornecedor.CODIGO}</td>
                         <td className="px-6 py-4">{fornecedor.NOME}</td>
                         <td className="px-6 py-4 text-right space-x-2">
+                          <button className="text-blue-600" onClick={() => setCatalogo(fornecedor)}>Produtos</button>
                           <button
                             onClick={() => {
                               setSelectedFornecedor(fornecedor);
                               setMode(MODES.EDIT);
                             }}
                             className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={!can("suppliers.edit")}
                             aria-label={`Editar fornecedor ${fornecedor.NOME}`}
                           >
                             Editar
@@ -196,6 +202,7 @@ const FornecedorProdutoPage = () => {
                               setShowDeleteModal(true);
                             }}
                             className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            disabled={!can("suppliers.delete")}
                             aria-label={`Excluir fornecedor ${fornecedor.NOME}`}
                           >
                             Excluir

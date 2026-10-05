@@ -97,6 +97,12 @@ const marcaModel = {
       throw error;
     }
     if (total > 0 && force) {
+      const padrao = await this.getById(1);
+      if (codigo === 1 || !padrao) {
+        const error: any = new Error('Não é possível excluir esta marca: reassocie os produtos a outra marca existente antes de removê-la.');
+        error.status = 409;
+        throw error;
+      }
       // Atualiza produtos para marca padrão (1)
       await sql.query`UPDATE PRODUTO SET CODIGO_MARCA = 1 WHERE CODIGO_MARCA = ${codigo}`;
     }

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as usuarioService from '../services/usuarioService';
 import bcrypt from 'bcryptjs';
+import { listProfiles } from '../services/access-profiles';
 
 const usuarioController = {
   async atualizarDados(req: Request, res: Response, next: NextFunction) {
@@ -20,8 +21,8 @@ const usuarioController = {
     try {
       const { id } = req.params;
       const { role } = req.body;
-      if (!role || (role !== 'admin' && role !== 'user')) {
-        return res.status(400).json({ error: 'Role inválido. Use "admin" ou "user".' });
+      if (typeof role !== 'string' || !(await listProfiles()).some(p => p.code === role)) {
+        return res.status(400).json({ error: 'Perfil inexistente.' });
       }
       await usuarioService.atualizarRoleUsuario(Number(id), role);
       res.json({ message: 'Permissão do usuário atualizada com sucesso.' });

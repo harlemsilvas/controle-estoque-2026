@@ -1,3 +1,4 @@
+import { useAuth } from "../../hooks/useAuth";
 // src/pages/AdminUsuarios.jsx
 import React, { useState, useEffect } from "react";
 import { api } from "../../services/api";
@@ -16,6 +17,8 @@ import {
 } from "react-icons/fa";
 
 const AdminUsuarios = () => {
+  const { can } = useAuth();
+  const [profiles, setProfiles] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [novoUsuario, setNovoUsuario] = useState({
     username: "",
@@ -38,6 +41,7 @@ const AdminUsuarios = () => {
   // Carregar lista de usuários
   useEffect(() => {
     fetchUsuarios();
+    api.get("/perfis").then(({ data }) => setProfiles(data.profiles)).catch(() => setMensagem({ tipo: "erro", texto: "Erro ao carregar perfis." }));
   }, []);
 
   const fetchUsuarios = async () => {
@@ -114,11 +118,11 @@ const AdminUsuarios = () => {
   const handleEditRoleSave = async (id) => {
     try {
       await api.put(`/usuarios/${id}/role`, { role: editRoleValue });
-      setMensagem({ tipo: "sucesso", texto: "Permissão atualizada!" });
+      setMensagem({ tipo: "sucesso", texto: "Perfil atualizado!" });
       setEditRoleId(null);
       fetchUsuarios();
     } catch (error) {
-      setMensagem({ tipo: "erro", texto: "Erro ao atualizar permissão." });
+      setMensagem({ tipo: "erro", texto: error.response?.data?.error || "Erro ao atualizar perfil." });
     }
   };
   const handleEditRoleCancel = () => {
@@ -151,7 +155,7 @@ const AdminUsuarios = () => {
   return (
     <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-blue-700 mb-6 flex items-center gap-2">
-        <FaUser className="text-blue-500" /> Manutenção de Usuários
+        <FaUser className="text-blue-500" /> Usuários e permissões
       </h1>
 
       {/* Mensagem de Feedback */}
@@ -225,7 +229,7 @@ const AdminUsuarios = () => {
             </div>
           </div>
           <button
-            type="submit"
+            disabled={!can("users.create")} type="submit"
             className="col-span-1 md:col-span-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-all flex items-center gap-2 justify-center"
           >
             <FaCheck /> Criar Usuário
@@ -296,9 +300,9 @@ const AdminUsuarios = () => {
             <thead className="bg-gray-100">
               <tr>
                 <th className="py-2 px-4 text-left">ID</th>
+                <th className="py-2 px-4 text-left">Perfil</th>
                 <th className="py-2 px-4 text-left">Usuário</th>
                 <th className="py-2 px-4 text-left">Email</th>
-                <th className="py-2 px-4 text-left">Permissão</th>
                 <th className="py-2 px-4 text-left">Status</th>
                 <th className="py-2 px-4 text-left">Ações</th>
               </tr>
@@ -331,8 +335,7 @@ const AdminUsuarios = () => {
                             onChange={handleEditRoleChange}
                             className="border rounded px-2 py-1"
                           >
-                            <option value="user">Usuário</option>
-                            <option value="admin">Administrador</option>
+                            {profiles.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
                           </select>
                           <button
                             onClick={() => handleEditRoleSave(usuario.id)}
@@ -357,11 +360,9 @@ const AdminUsuarios = () => {
                               : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {usuario.role === "admin"
-                            ? "Administrador"
-                            : "Usuário"}
+                          {profiles.find(p => p.code === usuario.role)?.name || usuario.role}
                           <button
-                            onClick={() => handleEditRole(usuario)}
+                            disabled={!can("users.edit")} onClick={() => handleEditRole(usuario)}
                             className="ml-2 text-blue-500 hover:text-blue-700"
                             title="Editar Permissão"
                           >
@@ -427,14 +428,14 @@ const AdminUsuarios = () => {
                       ) : (
                         <>
                           <button
-                            onClick={() => handleEdit(usuario)}
+                            disabled={!can("users.edit")} onClick={() => handleEdit(usuario)}
                             className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded flex items-center"
                             title="Editar"
                           >
                             <FaUserEdit />
                           </button>
                           <button
-                            onClick={() =>
+                            disabled={!can("users.edit")} onClick={() =>
                               handleStatusUsuario(
                                 usuario.id,
                                 !usuario.is_active
@@ -450,7 +451,7 @@ const AdminUsuarios = () => {
                             {usuario.is_active ? <FaTrash /> : <FaRedo />}
                           </button>
                           <button
-                            onClick={() => openSenhaModal(usuario.id)}
+                            disabled={!can("users.edit")} onClick={() => openSenhaModal(usuario.id)}
                             className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded flex items-center"
                             title="Alterar Senha"
                           >

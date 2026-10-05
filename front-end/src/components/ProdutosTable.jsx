@@ -1,3 +1,4 @@
+import { useAuth } from "../hooks/useAuth";
 import React from "react";
 import {
   FaEye,
@@ -20,6 +21,7 @@ const ProdutosTable = ({
   setOrderDir,
 }) => {
   const renderSortIcon = (col) => {
+  const { can } = useAuth();
     if (orderBy === col) {
       return orderDir === "asc" ? (
         <FaSortUp className="inline ml-1" />
@@ -90,6 +92,7 @@ const ProdutosTable = ({
                     <FaEye size={18} />
                   </button>
                   <button
+                    disabled={!can("products.edit")}
                     onClick={() => onEdit(produto.CODIGO)}
                     className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     title="Editar"
@@ -97,6 +100,7 @@ const ProdutosTable = ({
                     <FaEdit size={18} />
                   </button>
                   <button
+                    disabled={!can("products.delete")}
                     onClick={() => onDelete(produto.CODIGO)}
                     className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
                     title="Excluir"

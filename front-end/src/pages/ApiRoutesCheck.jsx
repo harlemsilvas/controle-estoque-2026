@@ -1,3 +1,4 @@
+import { authenticatedFetch } from "../services/authenticatedFetch";
 import React, { useEffect, useState } from "react";
 import { buildApiUrl } from "../config/apiBaseUrl";
 
@@ -23,7 +24,7 @@ export default function ApiRoutesCheck() {
       const checks = await Promise.all(
         ROUTES.map(async (route) => {
           try {
-            const res = await fetch(route.url);
+            const res = await authenticatedFetch(route.url);
             const json = await res.json();
             return {
               ...route,

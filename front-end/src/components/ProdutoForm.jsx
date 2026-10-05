@@ -9,6 +9,9 @@ const ProdutoForm = ({
   familias = [],
   fornecedores = [],
   loading = false,
+  saving = false,
+  onCreateMarca,
+  onCreateFamilia,
   onChange,
   onSubmit,
   onCancel,
@@ -68,7 +71,10 @@ const ProdutoForm = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-700 mb-2">Marca</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-gray-700">Marca</label>
+                  {onCreateMarca && <button type="button" disabled={saving} className="text-blue-700" onClick={onCreateMarca}>+ Nova marca</button>}
+                </div>
                 <Autocomplete
                   options={marcas}
                   getOptionLabel={(option) =>
@@ -112,7 +118,10 @@ const ProdutoForm = ({
                 />
               </div>
               <div>
-                <label className="block text-gray-700 mb-2">Família</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-gray-700">Família</label>
+                  {onCreateFamilia && <button type="button" disabled={saving} className="text-blue-700" onClick={onCreateFamilia}>+ Nova família</button>}
+                </div>
 
                 <div>
                   <label className="block text-gray-700 mb-2">Família</label>
@@ -263,6 +272,7 @@ const ProdutoForm = ({
               </button>
               <button
                 type="submit"
+                disabled={saving}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 {isEdit ? "Atualizar" : "Salvar"}

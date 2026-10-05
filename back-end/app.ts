@@ -3,6 +3,10 @@ import express from 'express';
 import cors from 'cors';
 import sql from 'mssql';
 import dotenv from 'dotenv';
+import authenticateToken, { requireAdmin, requirePermission, AuthRequest } from './middleware/authMiddleware';
+import { requiredPermission } from './middleware/access-policy';
+import { listProfiles, permissionGroups, saveProfile } from './services/access-profiles';
+import { jwtSecret, revokeSession } from './middleware/session-security';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import errorHandler from './middleware/errorHandler';
@@ -14,22 +18,18 @@ import fornecedorController from './controllers/fornecedorController';
 import marcaController from './controllers/marcaController';
 import familiaController from './controllers/familiaController';
 import usuarioController from './controllers/usuarioController';
-import passwordController from './controllers/passwordController';
 import authController from './controllers/authController';
 import alertaController from './controllers/alertaController';
 import { connectToDatabase } from './models/db';
 
 dotenv.config();
-connectToDatabase().catch((err) => {
-  console.error('Erro ao conectar ao banco de dados:', err);
-  process.exit(1);
-});
+jwtSecret();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Confiar no proxy (importante para produção com nginx/reverse proxy)
-app.set('trust proxy', true);
+app.set('trust proxy', process.env.TRUST_PROXY === '1' ? 1 : false);
 
 // CORS configuration
 // localhost origins (dev + production local) + LAN sub-rede 192.168.0.x
@@ -80,7 +80,8 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.json());
+app.disable('x-powered-by');
+app.use(express.json({ limit: '1mb' }));
 
 function healthHandler(_req: express.Request, res: express.Response) {
   res.status(200).json({
@@ -93,6 +94,55 @@ function healthHandler(_req: express.Request, res: express.Response) {
 
 app.get('/health', healthHandler);
 app.get('/saude', healthHandler);
+
+// Login público; dados e operações abaixo exigem sessão válida.
+const attempts = new Map<string, { count: number; until: number }>();
+app.post('/login', (req, res, next) => {
+  const now = Date.now();
+  for (const [key, value] of attempts) if (value.until < now) attempts.delete(key);
+  const key = req.ip || 'unknown';
+  const entry = attempts.get(key) || { count: 0, until: now + 15 * 60 * 1000 };
+  if (entry.count >= 10) {
+    res.setHeader('Retry-After', String(Math.max(1, Math.ceil((entry.until - now) / 1000))));
+    return res.status(429).json({ error: 'Muitas tentativas. Aguarde para tentar novamente.' });
+  }
+  if (!attempts.has(key) && attempts.size >= 10000) return res.status(429).json({ error: 'Aguarde para tentar novamente.' });
+  entry.count++; attempts.set(key, entry);
+  res.on('finish', () => { if (res.statusCode < 400) attempts.delete(key); });
+  next();
+}, authController.login);
+app.post(['/forcar-senha', '/recuperar-senha', '/reset-password'], (_req, res) => {
+  res.status(410).json({ error: 'Recuperação automática indisponível. Solicite redefinição ao administrador.' });
+});
+app.use(authenticateToken);
+app.get('/me', (req, res) => res.json({ user: (req as AuthRequest).user }));
+app.post('/logout', (req, res, next) => {
+  try {
+    const session = (req as AuthRequest).session!;
+    revokeSession(session.id, session.expiry); res.status(204).send();
+  } catch (error) { next(error); }
+});
+app.use((req, res, next) => {
+  if (['/estoque/movimentar', '/estoque/movimentacao'].includes(req.path)) {
+    req.body.usuario = (req as AuthRequest).user!.username;
+  }
+  const permission = requiredPermission(req);
+  if (!permission) return res.status(404).json({ error: 'Rota não encontrada.' });
+  // Perfil do usuário pode ser escolhido por quem mantém usuários.
+  if (req.path === '/perfis' && req.method === 'GET' && (req as AuthRequest).user!.permissions.includes('users.read')) return next();
+  return requirePermission(permission)(req, res, next);
+});
+
+
+app.get('/perfis', async (_req, res, next) => {
+  try { res.json({ profiles: await listProfiles(), groups: permissionGroups }); } catch (error) { next(error); }
+});
+app.post('/perfis', async (req, res, next) => {
+  try { res.status(201).json(await saveProfile(req.body, (req as AuthRequest).user!.id, true)); } catch (error) { next(error); }
+});
+app.put('/perfis/:code', async (req, res, next) => {
+  try { res.json(await saveProfile({ ...req.body, code: req.params.code }, (req as AuthRequest).user!.id, false)); } catch (error) { next(error); }
+});
 
 // Relatório de movimentações de estoque
 app.get('/relatorio/movimentacoes', relatorioMovimentacoes);
@@ -149,6 +199,7 @@ const usuarioRouter = express.Router();
 
 // Produto
 produtoRouter.get('/', produtoController.listarTodos);
+produtoRouter.patch('/:codigo/fornecedor', produtoController.associarOrfao);
 produtoRouter.get('/:codigo', produtoController.buscarPorCodigo);
 produtoRouter.post('/', produtoController.criar);
 produtoRouter.put('/:codigo', produtoController.atualizar);
@@ -204,14 +255,6 @@ app.get('/alertas/historico', alertaController.historico);
 app.get('/alertas', alertaController.ativos);
 app.patch('/alertas/resolver/:id', alertaController.resolverAlerta);
 
-// Login
-app.post('/login', authController.login);
-
-// Recuperar Senha
-app.post('/recuperar-senha', passwordController.resetPassword);
-// Rota temporária para debug: força a senha de um usuário
-app.post('/forcar-senha', passwordController.forcarSenha);
-
 // Rota /totais deve ser registrada antes do middleware 404
 app.get('/totais', async (req, res) => {
   try {
@@ -255,6 +298,9 @@ app.use((req: express.Request, res: express.Response) => {
 // Middleware global de tratamento de erros (deve ser o último)
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
+export default app;
+if (require.main === module) {
+  connectToDatabase().then(() => {
+    app.listen(port, () => console.log(`Servidor rodando em http://localhost:${port}`));
+  }).catch(() => { console.error('Falha de conexão com banco ao iniciar backend.'); process.exit(1); });
+}

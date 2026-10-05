@@ -88,6 +88,7 @@ const produtoController = {
         fornecedor,
         marca,
         search,
+        orfaos: req.query.orfaos === 'true',
         orderBy,
         orderDir,
       });
@@ -122,6 +123,17 @@ const produtoController = {
    *       404:
    *         description: Produto não encontrado
    */
+  async associarOrfao(req: Request, res: Response, next: NextFunction) {
+    const codigo = Number(req.params.codigo);
+    const fornecedor = Number(req.body.fornecedor);
+    if (!Number.isSafeInteger(codigo) || codigo <= 0 || !Number.isSafeInteger(fornecedor) || fornecedor <= 0)
+      return res.status(400).json({ error: 'Produto e fornecedor devem ter códigos válidos.' });
+    try {
+      const produto = await produtoService.associarOrfao(codigo, fornecedor);
+      if (!produto) return res.status(409).json({ error: 'Produto indisponível, já associado ou fornecedor inexistente. Atualize a lista.' });
+      return res.json(produto);
+    } catch (err) { next(err); }
+  },
   async buscarPorCodigo(req: Request, res: Response, next: NextFunction) {
     try {
       const codigo = parseInt(req.params.codigo, 10);

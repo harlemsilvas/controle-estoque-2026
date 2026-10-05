@@ -1,88 +1,41 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect } from "react";
-
+import { api } from "../services/api";
 export const AuthContext = createContext();
-
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Estado de carregamento
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
-    console.log("[AuthProvider] useEffect - storedUser:", storedUser);
-    console.log("[AuthProvider] useEffect - storedToken:", storedToken);
-
-    if (storedUser && storedToken) {
-      const parsedUser = JSON.parse(storedUser);
-      if (validateToken(storedToken)) {
-        setUser(parsedUser);
-        console.log("[AuthProvider] useEffect - user setado:", parsedUser);
-      } else {
-        logout();
-        console.log("[AuthProvider] useEffect - token inválido, logout");
-      }
-    } else {
-      setUser(null);
-    }
-    setLoading(false);
-  }, []);
-
-  // Função para login
-  const login = async (userData, token) => {
-    console.log("[AuthProvider] login - userData:", userData);
-    setUser(userData); // Atualiza o estado do usuário
-    localStorage.setItem("user", JSON.stringify(userData)); // Salva no localStorage
-    localStorage.setItem("token", token); // Salva o token no localStorage
-    console.log(
-      "[AuthProvider] login - user salvo:",
-      localStorage.getItem("user")
-    );
-  };
-
-  // Função para logout
-  const logout = () => {
-    setUser(null); // Limpa o estado do usuário
-    localStorage.removeItem("user"); // Remove do localStorage
-    localStorage.removeItem("token"); // Remove o token do localStorage
-  };
-
-  // Função para validar o token (exemplo básico)
-  const validateToken = (token) => {
-    if (!token) {
-      console.warn("[AuthProvider] validateToken: token ausente");
-      return false;
-    }
-    try {
-      const parts = token.split(".");
-      if (parts.length !== 3) {
-        console.warn("[AuthProvider] validateToken: token malformado", token);
-        return false;
-      }
-      const payload = JSON.parse(atob(parts[1])); // Decodifica o token
-      const isExpired = payload.exp * 1000 < Date.now(); // Verifica se o token expirou
-      if (isExpired) {
-        console.warn("[AuthProvider] validateToken: token expirado", payload);
-      }
-      return !isExpired; // Retorna true se o token for válido
-    } catch (err) {
-      console.error("[AuthProvider] Erro ao validar token:", err, token);
-      return false;
-    }
-  };
-
-  // Valida se o usuário está autenticado
-  const isAuthenticated = !!user;
-
-  if (loading) {
-    return <div>Carregando...</div>; // Exibe um indicador de carregamento
+  const [user, setUser] = useState(null), [loading, setLoading] = useState(true);
+  function clearSession() { localStorage.removeItem("token"); localStorage.removeItem("user"); setUser(null); }
+  async function logout() {
+    try { if (localStorage.getItem("token")) await api.post("/logout"); }
+    finally { clearSession(); }
   }
-
-  return (
-    <AuthContext.Provider
-      value={{ user, setUser, isAuthenticated, login, logout }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  useEffect(() => {
+    let active = true;
+    async function restore() {
+      if (!localStorage.getItem("token")) { if (active) setLoading(false); return; }
+      try {
+        const { data } = await api.get("/me");
+        if (active) { setUser(data.user); localStorage.setItem("user", JSON.stringify(data.user)); }
+      } catch { if (active) clearSession(); }
+      finally { if (active) setLoading(false); }
+    }
+    restore();
+    const expired = () => clearSession();
+    window.addEventListener("auth:expired", expired);
+    return () => { active = false; window.removeEventListener("auth:expired", expired); };
+  }, []);
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem("token");
+    let timeout;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      if (!Number.isFinite(payload.exp)) { clearSession(); return; }
+      timeout = setTimeout(clearSession, Math.min(2147483647, Math.max(0, payload.exp * 1000 - Date.now())));
+    } catch { clearSession(); }
+    return () => clearTimeout(timeout);
+  }, [user]);
+  async function login(userData, token) { localStorage.setItem("token", token); localStorage.setItem("user", JSON.stringify(userData)); setUser(userData); }
+  const can = permission => !!user && (user.role === "admin" || user.permissions?.includes(permission));
+  if (loading) return <div>Carregando…</div>;
+  return <AuthContext.Provider value={{ user, can, setUser, isAuthenticated: !!user, login, logout }}>{children}</AuthContext.Provider>;
 };

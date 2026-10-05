@@ -2,6 +2,7 @@
 export const getMovimentacoes = async ({
   dataInicio,
   dataFim,
+  search,
   limit = 10,
   orderBy = "data DESC",
   page = 1,
@@ -9,6 +10,7 @@ export const getMovimentacoes = async ({
   const params = {};
   if (dataInicio) params.dataInicio = dataInicio;
   if (dataFim) params.dataFim = dataFim;
+  if (search) params.search = search;
   if (limit) params.limit = limit;
   if (orderBy) params.orderBy = orderBy;
   if (page) params.page = page;
@@ -21,6 +23,16 @@ import { API_BASE_URL } from "../config/apiBaseUrl";
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
+});
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+api.interceptors.response.use(response => response, error => {
+  if (error.response?.status === 401) window.dispatchEvent(new Event("auth:expired"));
+  return Promise.reject(error);
 });
 
 // Função para obter totais
@@ -64,6 +76,7 @@ export const getProdutos = async ({
   page = 1,
   limit = 20,
   fornecedor,
+  orfaos,
   marca,
   familia,
   search,
@@ -74,6 +87,7 @@ export const getProdutos = async ({
     page,
     limit,
     fornecedor,
+    orfaos,
     marca,
     familia,
     orderBy,
@@ -157,14 +171,15 @@ export const updateProduto = async (id, produto) => {
 
 export const deleteProduto = async (id) => {
   const response = await api.delete(`/produto/${id}`);
-  return response.data;
+  return response.data || {};
 };
 
 export const createMarca = async (marca) => {
   try {
-    await api.post("/marca", marca);
+    const response = await api.post("/marca", marca);
+    return response.data;
   } catch (error) {
-    throw new Error(error.response?.data || "Erro ao criar marca");
+    throw new Error(error.response?.data?.error || "Erro ao criar marca");
   }
   // return response.data;
 };
@@ -462,5 +477,17 @@ export const movimentarEstoquePorBarcode = async ({
     quantidade,
     usuario,
   });
+  return response.data;
+};
+
+export const associarProdutoOrfao = async (codigo, fornecedor) => {
+  const response = await api.patch(`/produto/${codigo}/fornecedor`, { fornecedor }, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+  return response.data;
+};
+
+export const exportMovimentacoesCsv = async (filters) => {
+  const response = await api.get("/relatorio/movimentacoes", { params: { ...filters, format: "csv", page: 1 }, responseType: "blob" });
   return response.data;
 };

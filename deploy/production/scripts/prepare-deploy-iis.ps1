@@ -1,99 +1,63 @@
+param(
+  [string]$IisRoot = 'C:\inetpub\controle-estoque-proxy',
+  [int]$BackendPort = 4300
+)
 $ErrorActionPreference = 'Stop'
-
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $deployRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent (Split-Path -Parent $deployRoot)
 $backendSource = Join-Path $repoRoot 'back-end'
 $frontendSource = Join-Path $repoRoot 'front-end'
-
-# Caminhos de deploy
 $backendTarget = Join-Path $deployRoot 'backend'
-$iisRoot = 'C:\inetpub\controle-estoque-proxy'
-
-Write-Host '[deploy] ========================================' -ForegroundColor Cyan
-Write-Host '[deploy] Building para Production + IIS' -ForegroundColor Cyan
-Write-Host '[deploy] ========================================' -ForegroundColor Cyan
-
-# Build Backend
-Write-Host '[deploy] 📦 Compilando backend TypeScript...' -ForegroundColor Yellow
+$runtimeEnv = Join-Path $backendTarget '.env'
+if (-not (Test-Path $runtimeEnv)) {
+  $runtimeEnv = Join-Path $backendSource '.env'
+}
+if (-not (Test-Path $runtimeEnv)) { throw 'Configure o .env do backend no servidor antes do deploy.' }
+if ($BackendPort -lt 1 -or $BackendPort -gt 65535) { throw 'Porta invalida.' }
+# O operador para somente o backend deste projeto antes de publicar.
+if (Get-NetTCPConnection -State Listen -LocalPort $BackendPort -ErrorAction SilentlyContinue) {
+  throw "Pare o backend deste projeto na porta $BackendPort antes do deploy. Nenhum processo foi encerrado pelo script."
+}
+function Invoke-Npm {
+  param([string]$Directory, [string[]]$Arguments)
+  Push-Location $Directory
+  try {
+    & npm @Arguments
+    if ($LASTEXITCODE -ne 0) { throw "npm falhou em $Directory" }
+  } finally { Pop-Location }
+}
+Invoke-Npm -Directory $backendSource -Arguments @('ci', '--include=dev')
+Invoke-Npm -Directory $frontendSource -Arguments @('ci', '--include=dev')
+# Preflight valida o .env de producao e a estrutura no banco sem alterar dados.
 Push-Location $backendSource
-npm run build
-if ($LASTEXITCODE -ne 0) { throw "Backend build falhou" }
-Pop-Location
-
-# Build Frontend
-Write-Host '[deploy] 📦 Compilando frontend with Vite...' -ForegroundColor Yellow
-Push-Location $frontendSource
-npm run build
-if ($LASTEXITCODE -ne 0) { throw "Frontend build falhou" }
-Pop-Location
-
-Write-Host '[deploy] 🧹 Limpando artefatos anteriores...' -ForegroundColor Yellow
-
-# Parar qualquer processo Node rodando
-Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 2
-
-# Limpar backend deploy
-if (Test-Path $backendTarget) { 
-    Remove-Item -Recurse -Force $backendTarget 
-    Write-Host "  ✓ Removido: $backendTarget"
+try {
+  & node 'scripts/check-deploy.cjs' $runtimeEnv
+  if ($LASTEXITCODE -ne 0) { throw 'Preflight de configuracao/banco falhou.' }
+} finally { Pop-Location }
+Invoke-Npm -Directory $backendSource -Arguments @('run', 'build')
+$oldApi = $env:VITE_API_BASE_URL
+try {
+  $env:VITE_API_BASE_URL = '/api'
+  Invoke-Npm -Directory $frontendSource -Arguments @('run', 'build')
+} finally {
+  if ($null -eq $oldApi) { Remove-Item Env:VITE_API_BASE_URL -ErrorAction SilentlyContinue }
+  else { $env:VITE_API_BASE_URL = $oldApi }
 }
-
-# Limpar frontend no IIS
-if (Test-Path $iisRoot) { 
-    Remove-Item -Recurse -Force "$iisRoot\*" -ErrorAction SilentlyContinue
-    Write-Host "  ✓ Limpado: $iisRoot"
-} else {
-    New-Item -ItemType Directory -Force -Path $iisRoot | Out-Null
-    Write-Host "  ✓ Criado: $iisRoot"
-}
-
-# Criar estruturas
-New-Item -ItemType Directory -Force -Path $backendTarget | Out-Null
+# Preservar .env, logs/session-revocations.json, configuracao IIS e assets anteriores.
+New-Item -ItemType Directory -Force -Path $backendTarget, $IisRoot | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $backendTarget 'scripts') | Out-Null
-
-# ============================================
-# Deploy Backend
-# ============================================
-Write-Host '[deploy] 📤 Deployando Backend...' -ForegroundColor Green
 Copy-Item -Recurse -Force (Join-Path $backendSource 'dist') $backendTarget
 Copy-Item -Force (Join-Path $backendSource 'package.json') $backendTarget
 Copy-Item -Force (Join-Path $backendSource 'package-lock.json') $backendTarget
 Copy-Item -Force (Join-Path $backendSource 'scripts\free-port.js') (Join-Path $backendTarget 'scripts\free-port.js')
-
-# Copiar .env se existir
-if (Test-Path (Join-Path $backendSource '.env')) {
-    Copy-Item -Force (Join-Path $backendSource '.env') (Join-Path $backendTarget '.env')
-    Write-Host "  ✓ .env copiado"
+if (-not (Test-Path (Join-Path $backendTarget '.env'))) {
+  Copy-Item -Force $runtimeEnv (Join-Path $backendTarget '.env')
 }
-
-Write-Host "  ✓ Backend em: $backendTarget"
-
-# ============================================
-# Deploy Frontend para IIS
-# ============================================
-Write-Host '[deploy] 📤 Deployando Frontend para IIS...' -ForegroundColor Green
-Copy-Item -Recurse -Force (Join-Path $frontendSource 'dist\*') $iisRoot
-
-Write-Host "  ✓ Frontend em: $iisRoot"
-
-# ============================================
-# Instalar dependências backend
-# ============================================
-Write-Host '[deploy] 📥 Instalando dependências backend...' -ForegroundColor Yellow
-Push-Location $backendTarget
-npm install --production
-Pop-Location
-
-Write-Host ''
-Write-Host '[deploy] ========================================' -ForegroundColor Cyan
-Write-Host '[deploy] ✅ Deploy concluído com sucesso!' -ForegroundColor Green
-Write-Host '[deploy] ========================================' -ForegroundColor Cyan
-Write-Host ''
-Write-Host 'Próximos passos:' -ForegroundColor Cyan
-Write-Host '  1. Backend: ' + $backendTarget
-Write-Host '  2. Frontend (IIS): ' + $iisRoot
-Write-Host '  3. Inicie o backend: node dist/app.js' -ForegroundColor Yellow
-Write-Host '  4. Acesse: https://estoque.local' -ForegroundColor Yellow
-Write-Host ''
+Invoke-Npm -Directory $backendTarget -Arguments @('ci', '--omit=dev')
+# Publicar assets antes do index para reduzir referencias a arquivos ausentes.
+Copy-Item -Recurse -Force (Join-Path $frontendSource 'dist\assets') $IisRoot
+Get-ChildItem (Join-Path $frontendSource 'dist') -File | Where-Object { $_.Name -notin @('index.html', 'web.config') } | ForEach-Object { Copy-Item $_.FullName $IisRoot -Force }
+Copy-Item -Force (Join-Path $frontendSource 'dist\index.html') $IisRoot
+Write-Host '[deploy] Arquivos publicados. Reinicie o backend e valide /api/health e login no IIS.'
+Write-Host '[deploy] web.config preservado: confira proxy /api/* -> backend sem prefixo /api.'

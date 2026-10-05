@@ -1,3 +1,4 @@
+import { useAuth } from "../hooks/useAuth";
 import React, { useState, useEffect } from "react";
 import { toastSuccess, toastError } from "../services/toast";
 import {
@@ -18,6 +19,7 @@ const MODES = {
 };
 
 const MarcaProdutoPage = () => {
+  const { can } = useAuth();
   const [marcas, setMarcas] = useState([]);
   // Removido filteredMarcas, filtro será feito inline
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,7 +100,7 @@ const MarcaProdutoPage = () => {
         setShowForceDeleteModal(true);
         return;
       }
-      toastError(`Erro ao excluir marca: ${error.message}`);
+      toastError(error.response?.data?.error || error.response?.data?.message || `Erro ao excluir marca: ${error.message}`);
     } finally {
       setShowDeleteModal(false);
       setMarcaToDelete(null);
@@ -112,7 +114,7 @@ const MarcaProdutoPage = () => {
       toastSuccess("Marca excluída e produtos atualizados para marca padrão!");
       loadMarcas();
     } catch (error) {
-      toastError(`Erro ao excluir marca (forçado): ${error.message}`);
+      toastError(error.response?.data?.error || error.response?.data?.message || `Erro ao excluir marca (forçado): ${error.message}`);
     } finally {
       setShowForceDeleteModal(false);
       setMarcaForceDelete(null);
@@ -135,7 +137,7 @@ const MarcaProdutoPage = () => {
                 Marcas de Produtos
               </h1>
               <button
-                onClick={() => setMode(MODES.CREATE)}
+                disabled={!can("brands.create")} onClick={() => setMode(MODES.CREATE)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Criar nova marca"
               >

@@ -14,6 +14,7 @@ const produtoService = {
     marca,
     familia,
     search,
+    orfaos = false,
     orderBy = 'CODIGO',
     orderDir = 'ASC',
   }: {
@@ -23,11 +24,13 @@ const produtoService = {
     marca?: string;
     familia?: string;
     search?: string;
+    orfaos?: boolean;
     orderBy?: string;
     orderDir?: string;
   } = {}) {
     // Filtro dinâmico por fornecedor, marca, família e busca
     let where = '(DELETADO = 0 OR DELETADO IS NULL)';
+    if (orfaos) where += ' AND NOT EXISTS (SELECT 1 FROM FORNECEDOR f WHERE f.CODIGO = PRODUTO.COD_FORNECEDOR)';
     if (fornecedor) {
       where += ' AND COD_FORNECEDOR = @fornecedor';
     }
@@ -149,6 +152,18 @@ const produtoService = {
     const produto = await produtoModel.getById(codigo);
     if (!produto) throw new Error('Produto não encontrado');
     return produto;
+  },
+  async associarOrfao(codigo: number, fornecedor: number) {
+    const result = await new sql.Request()
+      .input('codigo', sql.Int, codigo)
+      .input('fornecedor', sql.Int, fornecedor)
+      .query(`UPDATE p SET COD_FORNECEDOR = @fornecedor
+        OUTPUT INSERTED.CODIGO, INSERTED.COD_FORNECEDOR
+        FROM PRODUTO p
+        WHERE p.CODIGO = @codigo AND (p.DELETADO = 0 OR p.DELETADO IS NULL)
+          AND EXISTS (SELECT 1 FROM FORNECEDOR f WHERE f.CODIGO = @fornecedor)
+          AND NOT EXISTS (SELECT 1 FROM FORNECEDOR f WHERE f.CODIGO = p.COD_FORNECEDOR)`);
+    return result.recordset[0];
   },
   async criar(produtoData: any) {
     // Adicione validações ou regras de negócio aqui

@@ -56,3 +56,10 @@ deploy/production/frontend/.env.production
 # Keep deploy scripts and docs, ignore generated deploy artifacts
 deploy/production/backend/dist/
 deploy/production/frontend/dist/
+
+# Referências locais preservadas durante migração (incluem segredos)
+/_referencias_locais/
+
+# Runtime gerado no Windows; configuracao e estado permanecem locais
+/deploy/production/backend/
+**/.pm2/

@@ -1,3 +1,4 @@
+import { useAuth } from "../hooks/useAuth";
 // src/pages/dmin/AlertasHistorico.jsx
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
@@ -5,6 +6,7 @@ import { getAlertasHistorico, resolveAlerta } from "../services/api";
 import AdminUsuarios from "./Admin/AdminUsuarios";
 
 const AlertasHistorico = () => {
+  const { can } = useAuth();
   const [alertas, setAlertas] = useState([]);
 
   const fetchAlertas = async () => {
@@ -88,7 +90,7 @@ const AlertasHistorico = () => {
                     {alerta.STATUS === "ativo" ? (
                       <button
                         className="px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors"
-                        onClick={() => handleResolver(alerta.ID)}
+                        disabled={!can("alerts.edit")} onClick={() => handleResolver(alerta.ID)}
                         title="Marcar como resolvido"
                       >
                         Resolver

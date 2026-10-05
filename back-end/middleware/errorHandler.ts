@@ -1,18 +1,7 @@
-import { Request, Response } from 'express';
-
-// Definição de tipo para erro customizado
-interface CustomError extends Error {
-  status?: number;
-  stack?: string;
-}
-
-function errorHandler(err: CustomError, req: Request, res: Response) {
-  console.error('Erro:', err);
+import { Request, Response, NextFunction } from 'express';
+interface CustomError extends Error { status?: number; }
+export default function errorHandler(err: CustomError, _req: Request, res: Response, _next: NextFunction) {
   const status = err.status || 500;
-  res.status(status).json({
-    error: err.message || 'Erro interno do servidor',
-    details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-  });
+  if (status >= 500) console.error('Falha interna na API; detalhes sensíveis não registrados.');
+  res.status(status).json({ error: status >= 500 ? 'Erro interno do servidor.' : err.message || 'Requisição inválida.' });
 }
-
-export default errorHandler;

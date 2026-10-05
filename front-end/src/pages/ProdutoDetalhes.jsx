@@ -1,3 +1,5 @@
+import { useAuth } from "../hooks/useAuth";
+import { authenticatedFetch } from "../services/authenticatedFetch";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -12,6 +14,7 @@ import { toastSuccess, toastError } from "../services/toast";
 import { buildApiUrl } from "../config/apiBaseUrl";
 
 const ProdutoDetalhes = () => {
+  const { can } = useAuth();
   const [historico, setHistorico] = useState([]);
   const [mostrarMais, setMostrarMais] = useState(false);
   const { id } = useParams();
@@ -48,7 +51,7 @@ const ProdutoDetalhes = () => {
   // Função para excluir tudo (produto e registros relacionados)
   const confirmDelete = async () => {
     try {
-      const response = await fetch(buildApiUrl(`/produto/${id}/excluir-tudo`), {
+      const response = await authenticatedFetch(buildApiUrl(`/produto/${id}/excluir-tudo`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -214,14 +217,14 @@ const ProdutoDetalhes = () => {
 
             {/* Botões de Ação */}
             <div className="mt-8 flex space-x-4">
-              <Link
+              {can("products.edit") && <Link
                 to={`/produto/editar/${produto.CODIGO}`}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Editar
-              </Link>
+              </Link>}
               <button
-                onClick={handleDelete}
+                disabled={!can("products.delete")} onClick={handleDelete}
                 className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Excluir

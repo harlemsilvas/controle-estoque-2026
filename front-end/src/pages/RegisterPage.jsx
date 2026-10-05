@@ -1,3 +1,4 @@
+import { authenticatedFetch } from "../services/authenticatedFetch";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -34,7 +35,7 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await fetch(buildApiUrl("/usuarios"), {
+      const response = await authenticatedFetch(buildApiUrl("/usuarios"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

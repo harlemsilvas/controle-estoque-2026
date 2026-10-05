@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import Header from "../components/Header";
 import { getTotais } from "../services/api";
 import { toastError } from "../services/toast";
@@ -14,6 +15,7 @@ const Home = () => {
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const loadTotais = async () => {
@@ -46,10 +48,9 @@ const Home = () => {
   //   loadTotais();
   // }, []);
 
-  const handleLogout = () => {
-    // Remover o token do localStorage
-    localStorage.removeItem("token");
-    navigate("/login"); // Redirecionar para a página de login
+  const handleLogout = async () => {
+    try { await logout(); } catch { /* Sessão local limpa mesmo com API indisponível. */ }
+    navigate("/login");
   };
 
   const MetricCard = ({ title, value, color, link, icon }) => (

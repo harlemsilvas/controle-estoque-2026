@@ -1,3 +1,4 @@
+import { useAuth } from "../hooks/useAuth";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -10,6 +11,7 @@ import {
 import { toastSuccess, toastError } from "../services/toast";
 
 const LixeiraProdutos = () => {
+  const { can } = useAuth();
   const [produtos, setProdutos] = useState([]);
   const [acao, setAcao] = useState(null);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
@@ -83,7 +85,7 @@ const LixeiraProdutos = () => {
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
                     <button
-                      onClick={() => {
+                      disabled={!can("trash.restore")} onClick={() => {
                         setAcao("restaurar");
                         setProdutoSelecionado(produto.CODIGO);
                       }}
@@ -92,7 +94,7 @@ const LixeiraProdutos = () => {
                       Restaurar
                     </button>
                     <button
-                      onClick={() => {
+                      disabled={!can("trash.delete")} onClick={() => {
                         setAcao("excluir");
                         setProdutoSelecionado(produto.CODIGO);
                       }}

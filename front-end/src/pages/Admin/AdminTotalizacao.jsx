@@ -1,3 +1,4 @@
+import { authenticatedFetch } from "../../services/authenticatedFetch";
 // src/pages/AdminTotalizacao.jsx
 import React, { useEffect, useState } from "react";
 import { buildApiUrl } from "../../config/apiBaseUrl";
@@ -10,7 +11,7 @@ const AdminTotalizacao = () => {
 
   // Função para buscar o total geral
   useEffect(() => {
-    fetch(buildApiUrl("/estoque/valor-total"))
+    authenticatedFetch(buildApiUrl("/estoque/valor-total"))
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Erro HTTP: ${response.status}`);
@@ -27,7 +28,7 @@ const AdminTotalizacao = () => {
 
   // Função para buscar totais por família
   useEffect(() => {
-    fetch(buildApiUrl("/estoque/valor-total-por-familia"))
+    authenticatedFetch(buildApiUrl("/estoque/valor-total-por-familia"))
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Erro HTTP: ${response.status}`);
@@ -49,7 +50,7 @@ const AdminTotalizacao = () => {
 
   // Função para buscar totais por marca
   useEffect(() => {
-    fetch(buildApiUrl("/estoque/valor-total-por-marca"))
+    authenticatedFetch(buildApiUrl("/estoque/valor-total-por-marca"))
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Erro HTTP: ${response.status}`);
@@ -71,7 +72,7 @@ const AdminTotalizacao = () => {
 
   // Função para buscar totais por fornecedor
   useEffect(() => {
-    fetch(buildApiUrl("/estoque/valor-total-por-fornecedor"))
+    authenticatedFetch(buildApiUrl("/estoque/valor-total-por-fornecedor"))
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Erro HTTP: ${response.status}`);

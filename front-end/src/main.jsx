@@ -2,7 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Header from "./components/Header";
+import MeusAcessos from "./pages/MeusAcessos";
+import AdminPerfis from "./pages/Admin/AdminPerfis";
+import PermissionRoute from "./components/PermissionRoute";
 import Home from "./pages/Home";
 import LancamentoEstoque from "./pages/LancamentoEstoque";
 import Login from "./pages/LoginPage"; // Importe a página de login
@@ -53,7 +57,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Routes>
           {/* Rotas públicas */}
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<AdminRoute permission="users.create"><Register /></AdminRoute>} />
           {/* Rotas protegidas */}
           {/* <Route path="/" element={<Home />} /> */}
           <Route
@@ -67,45 +71,45 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route
             path="/produtos"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="products.read">
                 <Produtos />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/produto/:id"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="products.read">
                 <ProdutoDetalhes />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           {/* // Adicionar novas rotas */}
-          <Route path="/produto/novo" element={<ProdutoForm />} />
+          <Route path="/produto/novo" element={<AdminRoute permission="products.create"><ProdutoForm /></AdminRoute>} />
           <Route
             path="/produto/editar/:id"
             element={
-              <ProtectedRoute>
+              <AdminRoute permission="products.edit">
                 <ProdutoForm />
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route
             path="/familias"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="families.read">
                 <FamiliaProdutoPage />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           {/* Rota para movimentação de estoque com histórico na tela*/}
           <Route
             path="/estoque/movimentacaohistorico"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="stock.read">
                 <MovimentacaoEstoque />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           {/* Nova rota para movimentação de estoque */}
@@ -113,25 +117,25 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route
             path="/estoque/lancamento"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="stock.move">
                 <LancamentoEstoque />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/estoque/movimentacao"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="stock.move">
                 <NovaMovimentacaoEstoque />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/marcas"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="brands.read">
                 <MarcaProdutoPage />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           {/* <Route
@@ -142,29 +146,36 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             </ProtectedRoute>
           }
         /> */}
-          <Route path="/produtos/lixeira" element={<LixeiraProdutos />} />
+          <Route path="/produtos/lixeira" element={<PermissionRoute permission="trash.read"><LixeiraProdutos /></PermissionRoute>} />
           <Route
             path="/fornecedores"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="suppliers.read">
                 <FornecedorProdutoPage />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
-          <Route path="/alertas/historico" element={<AlertasHistorico />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/alertas/historico" element={<PermissionRoute permission="alerts.read"><AlertasHistorico /></PermissionRoute>} />
           <Route path="/forgot-password" element={<RecoverPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/api-check" element={<ApiRoutesCheck />} />
+          <Route path="/api-check" element={<AdminRoute><ApiRoutesCheck /></AdminRoute>} />
           <Route
             path="/configuracoes/lancamento"
             element={
-              <ProtectedRoute>
+              <AdminRoute permission="settings.read">
                 <ConfiguracoesLancamento />
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
 
+          <Route path="/relatorios" element={<ProtectedRoute><Header /><PermissionRoute permission="reports.read"><RelatorioMovimentacoes /></PermissionRoute></ProtectedRoute>} />
+          <Route path="/relatorios/movimentacoes" element={<Navigate to="/relatorios" replace />} />
+
+          <Route path="/conta/acessos" element={<ProtectedRoute><MeusAcessos /></ProtectedRoute>} />
+
+          <Route path="/relatorios/fornecedores" element={<ProtectedRoute><Header /><PermissionRoute permission="reports.read"><AdminRelatorioFornecedores /></PermissionRoute></ProtectedRoute>} />
+          <Route path="/relatorios/marcas" element={<ProtectedRoute><Header /><PermissionRoute permission="reports.read"><AdminRelatorioMarcas /></PermissionRoute></ProtectedRoute>} />
+          <Route path="/relatorios/familias" element={<ProtectedRoute><Header /><PermissionRoute permission="reports.read"><AdminRelatorioFamilias /></PermissionRoute></ProtectedRoute>} />
           {/* Rotas administrativas */}
           {/* <Route path="/admin" element={<AdminLayout user={user} />}> */}
           {/* Rotas protegidas */}
@@ -176,44 +187,45 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               </AdminRoute>
             }
           >
-            <Route index element={<AdminDashboard />} />
-            <Route path="totais" element={<AdminMenu />} />
-            <Route path="relatorios" element={<AdminRelatorios />} />
+            <Route index element={<PermissionRoute permission="reports.read"><AdminDashboard /></PermissionRoute>} />
+            <Route path="totais" element={<PermissionRoute permission="reports.read"><AdminMenu /></PermissionRoute>} />
+            <Route path="relatorios" element={<PermissionRoute permission="reports.read"><AdminRelatorios /></PermissionRoute>} />
             <Route
               path="relatorios/marcas"
-              element={<AdminRelatorioMarcas />}
+              element={<PermissionRoute permission="reports.read"><AdminRelatorioMarcas /></PermissionRoute>}
             />
             <Route
               path="relatorios/fornecedores"
-              element={<AdminRelatorioFornecedores />}
+              element={<PermissionRoute permission="reports.read"><AdminRelatorioFornecedores /></PermissionRoute>}
             />
             <Route
               path="relatorios/familias"
-              element={<AdminRelatorioFamilias />}
+              element={<PermissionRoute permission="reports.read"><AdminRelatorioFamilias /></PermissionRoute>}
             />
             <Route
               path="relatorios/movimentacoes"
-              element={<RelatorioMovimentacoes />}
+              element={<PermissionRoute permission="reports.read"><RelatorioMovimentacoes /></PermissionRoute>}
             />
-            <Route path="usuarios" element={<AdminUsuarios />} />
-            <Route path="etiquetas" element={<AdminEtiquetas />} />
-            <Route path="configuracoes" element={<AdminConfiguracoes />} />
+            <Route path="usuarios" element={<PermissionRoute permission="users.read"><AdminUsuarios /></PermissionRoute>} />
+            <Route path="perfis" element={<PermissionRoute permission="profiles.read"><AdminPerfis /></PermissionRoute>} />
+            <Route path="etiquetas" element={<PermissionRoute permission="products.read"><AdminEtiquetas /></PermissionRoute>} />
+            <Route path="configuracoes" element={<PermissionRoute permission="settings.read"><AdminConfiguracoes /></PermissionRoute>} />
 
             <Route
               path="totalizacao/familia"
-              element={<AdminTotalizacaoFamilia />}
+              element={<PermissionRoute permission="reports.read"><AdminTotalizacaoFamilia /></PermissionRoute>}
             />
             <Route
               path="totalizacao/marca"
-              element={<AdminTotalizacaoMarca />}
+              element={<PermissionRoute permission="reports.read"><AdminTotalizacaoMarca /></PermissionRoute>}
             />
             <Route
               path="totalizacao/fornecedor"
-              element={<AdminTotalizacaoFornecedor />}
+              element={<PermissionRoute permission="reports.read"><AdminTotalizacaoFornecedor /></PermissionRoute>}
             />
-            <Route path="totalizacao" element={<AdminTotalizacao />} />
+            <Route path="totalizacao" element={<PermissionRoute permission="reports.read"><AdminTotalizacao /></PermissionRoute>} />
             {/* /admin/totalizacao/produto */}
-            <Route path="totalizacao/produto" element={<AdminTotalizacao />} />
+            <Route path="totalizacao/produto" element={<PermissionRoute permission="reports.read"><AdminTotalizacao /></PermissionRoute>} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

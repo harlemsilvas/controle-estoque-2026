@@ -1,3 +1,4 @@
+import { useAuth } from "../hooks/useAuth";
 import React, { useState, useEffect } from "react";
 import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { toastSuccess, toastError } from "../services/toast";
@@ -18,6 +19,7 @@ const MODES = {
 };
 
 const FamiliaProdutoPage = () => {
+  const { can } = useAuth();
   const [familias, setFamilias] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFamilia, setSelectedFamilia] = useState(null);
@@ -134,7 +136,7 @@ const FamiliaProdutoPage = () => {
                 Famílias de Produtos
               </h1>
               <button
-                onClick={() => setMode(MODES.CREATE)}
+                disabled={!can("families.create")} onClick={() => setMode(MODES.CREATE)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Criar nova família"
               >
@@ -233,6 +235,7 @@ const FamiliaProdutoPage = () => {
                               setMode(MODES.EDIT);
                             }}
                             className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={!can("families.edit")}
                             aria-label={`Editar família ${familia.DESCRICAO}`}
                           >
                             Editar
@@ -243,6 +246,7 @@ const FamiliaProdutoPage = () => {
                               setShowDeleteModal(true);
                             }}
                             className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            disabled={!can("families.delete")}
                             aria-label={`Excluir família ${familia.DESCRICAO}`}
                           >
                             Excluir

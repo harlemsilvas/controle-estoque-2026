@@ -12,12 +12,17 @@ export async function atualizarDadosUsuario(
     .query('UPDATE users SET username = @username, email = @email WHERE id = @id');
 }
 export async function atualizarRoleUsuario(id: number, role: string): Promise<void> {
-  const pool = await connectToDatabase();
-  await pool
-    .request()
-    .input('id', sql.Int, id)
-    .input('role', sql.VarChar(20), role)
-    .query('UPDATE users SET role = @role WHERE id = @id');
+  const pool = await connectToDatabase(), tx = new sql.Transaction(pool);
+  await tx.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
+  try {
+    const result = await new sql.Request(tx).query("SELECT id,role,is_active FROM users WITH (UPDLOCK,HOLDLOCK)");
+    const target = result.recordset.find(u => u.id === id);
+    if (!target) throw Object.assign(new Error('Usuário inexistente.'), { status: 404 });
+    if (target.role === 'admin' && target.is_active && role !== 'admin' && result.recordset.filter(u => u.role === 'admin' && u.is_active).length <= 1)
+      throw Object.assign(new Error('Mantenha pelo menos um administrador ativo.'), { status: 409 });
+    await new sql.Request(tx).input('id',sql.Int,id).input('role',sql.VarChar(20),role).query('UPDATE users SET role=@role WHERE id=@id');
+    await tx.commit();
+  } catch (error) { await tx.rollback(); throw error; }
 }
 export async function atualizarStatusUsuario(id: number, is_active: boolean): Promise<void> {
   const pool = await connectToDatabase();
@@ -89,4 +94,11 @@ export async function atualizarSenhaUsuario(id: number, hash: string): Promise<v
     .input('id', sql.Int, id)
     .input('password_hash', sql.VarChar(255), hash)
     .query('UPDATE users SET password_hash = @password_hash WHERE id = @id');
+}
+
+export async function buscarUsuarioPorId(id: number): Promise<Usuario | null> {
+  const pool = await connectToDatabase();
+  const result = await pool.request().input('id', sql.Int, id)
+    .query('SELECT id, username, email, role, is_active, password_hash FROM users WHERE id = @id');
+  return result.recordset[0] || null;
 }

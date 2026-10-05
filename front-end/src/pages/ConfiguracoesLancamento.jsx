@@ -1,3 +1,4 @@
+import { useAuth } from "../hooks/useAuth";
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 
@@ -10,6 +11,7 @@ const defaultConfig = {
 };
 
 const ConfiguracoesLancamento = () => {
+  const { can } = useAuth();
   const [config, setConfig] = useState(defaultConfig);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ const ConfiguracoesLancamento = () => {
 
         <div className="space-y-4">
           <div className="flex items-start gap-2">
-            <input
+            <input disabled={!can("settings.edit")}
               id="cfg-auto-lancar"
               type="checkbox"
               className="mt-1 h-4 w-4"
@@ -70,7 +72,7 @@ const ConfiguracoesLancamento = () => {
           </div>
 
           <div className="flex items-start gap-2">
-            <input
+            <input disabled={!can("settings.edit")}
               id="cfg-beep-erro"
               type="checkbox"
               className="mt-1 h-4 w-4"
@@ -92,7 +94,7 @@ const ConfiguracoesLancamento = () => {
             >
               Tempo para limpar campo após erro (ms)
             </label>
-            <input
+            <input disabled={!can("settings.edit")}
               id="cfg-tempo-limpeza"
               type="number"
               min={200}

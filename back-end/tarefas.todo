@@ -1,12 +1,52 @@
+Tarefas revisadas em 2026-10-05
 
-Tarefas concluídas:
-- [x] Adicionar paginação na listagem de produtos (backend e frontend)
-- [x] Adicionar filtro por Fornecedor
-- [x] Adicionar filtro por Marca
+Implementado:
+- [x] Paginação, filtros por fornecedor/marca e ordenação de produtos.
+- [x] Paginação de marcas, fornecedores e famílias.
+- [x] Catálogo do fornecedor: novos produtos e associação individual/em lote de órfãos.
+- [x] Associação condicional impede substituir fornecedor válido, associar excluídos ou fornecedor inexistente.
+- [x] Cadastro rápido de marca/família com seleção automática e preservação dos campos do produto.
+- [x] Relatório de movimentações: período completo, busca por produto e CSV de todas as páginas.
+- [x] Relatórios por fornecedor, marca e família: busca, valor mínimo, ordenação, totais filtrados e CSV.
+- [x] Menus organizados: Cadastros, Relatórios, Admin com Configurações, Consultas (Alertas/Lixeira) e Movimentação direta.
+- [x] Configurações de lançamento restritas ao Admin no frontend; tela Geral oferece acesso à configuração existente.
 
-Tarefa em andamento:
-- [ ] Adicionar ordenação por nome/código (backend e frontend)
+- [x] Totalizações por marca/fornecedor/família corrigidas para os campos da API e atalhos no menu Admin.
 
-O backend atualmente retorna todas as marcas, fornecedores e famílias sem paginação, usando métodos como getAll() em cada model.  Adicionar métodos paginados nos models (getPaginated), aceitando parâmetros page e limit, e retornando { data, total, totalPages }.
-Atualizar os services para expor listarPaginado(page, limit).
-Atualizar os controllers para aceitar query params page e limit e retornar o formato paginado. começar implementando a paginação para marcas
+Validação manual:
+- [ ] Confirmar as três totalizações de estoque no navegador.
+- [ ] Confirmar correção das exclusões de produto/marca e tela Meus acessos no navegador (nenhum perfil elevado automaticamente).
+- [x] Associação em lote testada e confirmada pelo usuário.
+- [x] Relatório de movimentações, filtros e CSV testados e confirmados pelo usuário.
+- [x] Relatórios confirmados funcionais pelo usuário.
+- [ ] Confirmar teste do cadastro rápido de marca/família no navegador.
+- [ ] Validar cadastro/edição de produtos e novos menus no navegador.
+
+Autenticação/autorização — PRIORIDADE ATUAL (docs/features/002-autenticacao-autorizacao.md):
+- [x] Revisão inicial do código: rotas privadas sem autenticação, redefinição de senha sem prova de identidade e logs de tokens identificados.
+- [x] Proteção básica implementada e regressão automatizada validada (68 verificações HTTP; sem alteração de dados reais).
+- [x] API privada exige JWT validado e usuário ativo conferido no banco.
+- [x] Permissões por perfil/menu/ação na API e frontend; usuário padrão consulta/movimenta e Somente leitura não altera dados.
+- [x] Força de senha e recuperação sem prova de identidade bloqueadas (HTTP 410); redefinição administrativa permanece protegida.
+- [x] Sessão/expiração, status/perfil atual, invalidação por troca de senha, revogação persistida no logout e remoção de logs de tokens revisados.
+- [x] Testes automatizados para ausência de login, expiração/invalidação, inativação e perfil não admin.
+- [ ] Testar login real, navegação, logout e permissões com usuários admin/user no navegador.
+- [ ] Implementar recuperação automática por token de uso único (fluxo público antigo desativado).
+Nota: requer novo login após atualização. Revogação persistida projetada para uma instância/processo; configuração multi-instância requer armazenamento compartilhado.
+
+Perfis e permissões:
+- [x] Tela Admin → Perfis e permissões: criar/editar perfis, permissões por menu e ação.
+- [x] Perfis base Administrador, Usuário e Somente leitura; seleção em Admin → Usuários.
+- [x] Menus, rotas e ações conforme permissões; API verifica direitos atuais a cada requisição.
+- [x] Auditoria transacional da criação/edição, controle de versão e Administrador protegido.
+- [x] Testes de leitura sem escrita, perfis/auditoria/conflitos em tabelas temporárias; builds aprovados.
+- [ ] Validar tela e atribuição do perfil Somente leitura no navegador.
+
+Próximas funcionalidades:
+- [x] Especificar relatórios de cadastros e importação de correções em docs/features/001-relatorios-cadastros-importacao.md.
+- [ ] Relatórios de Produtos, Fornecedores, Marcas e Famílias com exportação CSV.
+- [ ] Exportação XLSX.
+- [ ] Importação de correções com prévia, conflitos e auditoria por usuário/lote/linha (após autenticação).
+
+Decisões: um fornecedor por produto, mantendo COD_FORNECEDOR. Migration aditiva de perfis aplicada em SERVER-ABC, sem alterar usuários existentes.
+Órfão: produto ativo sem fornecedor válido (NULL, zero ou referência inexistente).

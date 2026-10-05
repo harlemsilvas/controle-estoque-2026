@@ -1,6 +1,8 @@
+import { authenticatedFetch } from "../services/authenticatedFetch";
 import React, { useEffect, useState } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
+import { useAuth } from "../hooks/useAuth";
 import Header from "../components/Header";
 import { Link, useNavigate } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
@@ -15,6 +17,7 @@ import ProdutosTable from "../components/ProdutosTable";
 import { buildApiUrl } from "../config/apiBaseUrl";
 
 const Produtos = () => {
+  const { can } = useAuth();
   const navigate = useNavigate();
   const getOptionId = (option) =>
     option?.CODIGO || option?.id || option?.codigo || "sem-id";
@@ -124,7 +127,7 @@ const Produtos = () => {
   const confirmSimpleDelete = async () => {
     try {
       const response = await deleteProduto(productToDelete);
-      if (response.relatedRecords) {
+      if (response?.relatedRecords) {
         setRelatedRecords(response.relatedRecords);
         setShowDeleteModal(true);
       } else {
@@ -132,7 +135,7 @@ const Produtos = () => {
         toastSuccess("Produto excluído com sucesso!");
       }
     } catch (error) {
-      toastError("Erro ao excluir produto: " + error.message);
+      toastError(error.response?.data?.error || error.response?.data?.message || "Erro ao excluir produto: " + error.message);
     } finally {
       setShowSimpleDeleteModal(false);
       setProductToDelete(null);
@@ -142,7 +145,7 @@ const Produtos = () => {
   // Função para excluir tudo (produto e registros relacionados)
   const confirmDelete = async () => {
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         buildApiUrl(`/produto/${productToDelete}/excluir-tudo`),
         {
           method: "POST",
@@ -173,13 +176,13 @@ const Produtos = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex flex-wrap gap-4 mb-4 items-end">
           <div className="flex items-center gap-2">
-            <Link
+            {can("products.create") && <Link
               to="/produto/novo"
               className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               title="Novo produto"
             >
               <FaPlus size={14} />
-            </Link>
+            </Link>}
           </div>
           <input
             type="text"
