@@ -1,4 +1,4 @@
-"# OS / Editor
+# OS / Editor
 .DS_Store
 Thumbs.db
 .vscode/*
@@ -63,3 +63,7 @@ deploy/production/frontend/dist/
 # Runtime gerado no Windows; configuracao e estado permanecem locais
 /deploy/production/backend/
 **/.pm2/
+
+# Diagnosticos e clones locais do Codex
+/.codex/
+/pm2-teste-status.txt

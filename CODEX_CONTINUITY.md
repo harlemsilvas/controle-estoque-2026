@@ -36,3 +36,61 @@ Validação local final: backend reiniciado; /health 200, /perfis sem sessão 40
 - Regressao final: 68 verificacoes HTTP com perfis isolados e controllers de escrita bloqueados; servico de perfis em tabelas temporarias aprovado.
 - O teste legado dependia do perfil readonly real editado pelo usuario e acionou restauracao de CODIGO=1. Alteracao revertida explicitamente (DELETADO=1, uma linha); nao repetir testes sem isolamento. Perfis reais preservados.
 - Banco validado, builds backend/frontend com /api e diff check aprovados; preparado commit em main para envio ao origin.
+
+### Verificacao atual Windows e compilacao local — 2026-10-06
+TAG: RETOMADA-20261006-BUILD-LOCAL-WINDOWS
+- Lidos CODEX_CONTINUITY.md, DEPLOY-IIS.md, README.md, DEPLOY-MANUAL.md, docs/producao-windows.md, manifests e script prepare-deploy-iis.ps1. Para IIS, seguir DEPLOY-IIS.md revisado em 2026-10-05; documentos antigos divergem sobre portas, base da API e prepare-deploy.ps1.
+- Git nao reconheceu C:\controle-estoque-2026 como repositorio; correspondencia com main e alteracoes locais nao puderam ser verificadas. Nenhum fonte ou lockfile foi editado intencionalmente.
+- Node v22.16.0. Backend: npm run build aprovado (tsc, exit 0); artefato back-end/dist/app.js confirmado.
+- Frontend: dependencias locais inicialmente incompletas (atalho vite ausente e binding SWC indisponivel). npm ci --include=dev --no-audit --no-fund concluido fora do sandbox apos EPERM; 360 pacotes instalados.
+- Frontend: npm run build com VITE_API_BASE_URL=/api aprovado no Windows (exit 0, 1590 modulos). Artefatos em front-end/dist. Variavel de ambiente anterior restaurada. Avisos de Browserslist antigo, importacao estatica/dinamica e bundle acima de 500 kB nao impediram o build.
+- Esta verificacao confirma compilacao local, nao testes funcionais ou deploy. Nenhum banco foi consultado/alterado, nenhuma migration/deploy executada e nenhum servico reiniciado.
+- Pendencias: confirmar clone/main oficial antes da publicacao, validar configuracao e banco de producao com preflight autorizado, preservar configuracao/runtime, publicar e validar health/login/permissoes/relatorios no IIS quando solicitado. Validacao visual historica ainda pendente.
+
+### Auditoria npm e preparacao PM2/IP — 2026-10-06
+TAG: RETOMADA-20261006-NPM-PM2-IP
+- Usuario esclareceu: C:\controle-estoque e a versao publicada; C:\controle-estoque-2026 e a nova versao, separada para testes. IIS desconsiderado por enquanto; fluxo PM2 e acesso direto por IP.
+- Git da nova pasta continua sem repositorio. Git da antiga consultado: alteracoes locais em dump.pm2, register-startup-tasks.ps1 e estoque.bat, preservadas. Apenas configuracao PM2 consultada; nenhum segredo lido/impresso.
+- Auditoria atual npm: frontend 25 -> 7 alertas, zero em producao; backend e raiz 15 -> 6 cada, com 3 moderados em producao na mesma cadeia mssql/tedious/sprintf-js. Sem criticos/altos de producao. Detalhes e pendencias em docs/auditoria-npm-20261006.md.
+- Aplicadas correcoes compativeis e atualizados manifests/lockfiles: axios, react-router-dom, Vite, PostCSS, typescript-eslint e override qs. Sem --force/downgrades. Copias locais anteriores e JSONs em .codex/npm-security-20261006.
+- Builds backend/frontend e verificacoes npm ls aprovados apos correcoes. Build frontend agora aponta para http://192.168.0.69:4301, nao /api. IP local confirmado nesta verificacao.
+- docs/teste-pm2-ip.md prepara portas 4301/4174 e nomes distintos para nova versao. Antiga configuracao usa 4300/4173. Roteiro nao executado; nenhuma instancia PM2 iniciada, deploy/migration ou banco alterado.
+- Pendencias: braces/sprintf-js sem patch publicado; Tailwind 3 tem cadeia de desenvolvimento com alertas, migracao principal precisa validacao visual; validar funcionalmente PM2/IP quando solicitado. Separar banco de teste antes de operacoes de escrita: portas/pastas distintas nao isolam dados. Registros IIS anteriores sao historicos, nao o fluxo atual.
+
+### Diagnostico de conexao recusada — 2026-10-06
+TAG: RETOMADA-20261006-PM2-CONEXAO
+- Portas confirmadas: versao publicada ouvindo 4300/4173; nova versao sem listeners 4301/4174. Localhost sem porta nao aponta para o frontend PM2.
+- Tentativa de iniciar somente frontend no PM2 existente falhou com connect EPERM //./pipe/rpc.sock. Nenhuma nova instancia confirmada; processos publicados continuam ativos. Nao criar daemon alternativo nem encerrar processos antigos.
+- Usuario autorizou usar banco da versao publicada. Copiada configuracao deploy/production/backend/.env da pasta antiga para back-end/.env desta copia, somente porque destino nao existia; conteudo nao exibido/registrado. PORT=4301 sera fornecido pelo PM2, sobrepondo valor do arquivo.
+- Criado iniciar-teste-pm2.ps1 com nomes separados, portas 4301/4174, mesmo PM2_HOME, preservacao de variaveis e verificacoes HTTP. Sintaxe validada; execucao operacional pendente na mesma conta/permissao elevada que controla PM2.
+- Nenhum deploy/migration ou escrita no banco executados. Banco compartilhado por escolha explicita: operacoes de escrita na nova versao atingem dados publicados.
+
+### Correcao da elevacao PM2 no Windows — 2026-10-06
+TAG: RETOMADA-20261006-PM2-ELEVACAO
+- Verificacao atual: sessao Harlem nao elevada; script de startup publicado configura SYSTEM. Proprietario dos processos publicados nao pode ser confirmado por esta sessao.
+- Codigo local PM2 paths.js confirma pipes fixos rpc.sock/pub.sock no Windows, mesmo ao alterar PM2_HOME. Nao alterar PM2 global nem criar outro daemon.
+- iniciar-teste-pm2.ps1 agora solicita elevacao UAC com RunAs antes de qualquer chamada PM2, usando janela oculta; detecta elevacao negada. Sintaxe validada. Confirmacao operacional depende de UAC e verificacao HTTP; nao confundir script preparado com servicos iniciados.
+
+### Validacao operacional PM2/IP concluida — 2026-10-06
+TAG: RETOMADA-20261006-PM2-TESTE-ATIVO
+- Inicializacao elevada UAC aprovada e executada. Corrigidas consultas de instancias ausentes e incompatibilidade JSON/PowerShell; consulta via API local PM2 retorna apenas nomes, sem imprimir ambiente/segredos.
+- Novos processos de teste iniciados no PM2 existente, nomes controle-estoque-2026-api-teste e controle-estoque-2026-web-teste. Status seguro em pm2-teste-status.txt: API/frontend HTTP 200.
+- Verificacao atual: frontend http://192.168.0.69:4174 e API http://192.168.0.69:4301/health retornam 200. Versao publicada 4173 e 4300/health tambem retorna 200; preservada.
+- Sintaxe final do script validada. Nao executado pm2 save, migrations ou deploy da versao publicada. Banco compartilhado por autorizacao explicita; login/permissoes/relatorios ainda precisam de validacao funcional. Nao executar testes de escrita automatizados no banco compartilhado.
+
+### Correcao Cadastro > Produtos — 2026-10-06
+TAG: RETOMADA-20261006-PRODUTOS-TABELA
+- Usuario validou demais telas e informou falha apenas na consulta Cadastro > Produtos.
+- Causa confirmada no fonte: useAuth/can declarado dentro de renderSortIcon em ProdutosTable.jsx; botoes de editar/excluir usam can fora desse escopo e falham ao renderizar produtos. Hook movido para o corpo do componente; regras de permissoes preservadas.
+- Teste de renderizacao React com dados ficticios aprovado: carregamento, vazio, lista com permissoes negadas (dois botoes desabilitados) e permitidas. Nenhum banco acessado pelo teste. Script local em .codex/test-products-table.cjs.
+- Build frontend com API http://192.168.0.69:4301 aprovado. Frontend PM2 4174 entrega index e novo bundle index-E1HLaYaW.js com HTTP 200; sem reiniciar servicos.
+- Nenhuma alteracao na API, versao publicada ou banco. Validacao visual da consulta corrigida ainda depende de recarregar o navegador. Git nesta copia segue indisponivel (nao e repositorio).
+
+### Sincronizacao das correcoes com GitHub — 2026-10-06
+TAG: RETOMADA-20261006-GIT-CORRECOES
+- Repositorio oficial consultado: https://github.com/harlemsilvas/controle-estoque-2026, main no commit d2570f5 antes desta sincronizacao.
+- Nova pasta local nao possui .git. Criado clone separado em .codex/repo-sync para preservar runtime e arquivos em uso. Comparacao normalizada confirmou base main; diferencas materiais limitadas aos pacotes, ProdutosTable e continuidade.
+- Preparado commit com correcoes npm, hook de permissoes da tabela, teste de regressao versionado em tests/test-products-table.cjs, roteiro PM2 e documentacao. Definidas versoes minimas corrigidas axios/react-router-dom/Vite no manifesto, mantendo lockfiles coerentes.
+- Estado PM2 dump.pm2 retirado do indice, sem apagar runtime original. .codex e pm2-teste-status.txt ignorados. .env, node_modules e builds fora do commit. Historico remoto nao reescrito.
+- Teste de renderizacao aprovado novamente; sintaxe PowerShell e git diff --check aprovados. Builds e verificacoes HTTP anteriores permanecem validacoes historicas desta sessao; nenhum deploy/migration executado nesta sincronizacao.
+- Envio deste commit e confirmacao do hash remoto serao feitos apos gravar este registro.

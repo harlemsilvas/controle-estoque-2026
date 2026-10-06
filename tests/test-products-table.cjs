@@ -1,0 +1,26 @@
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+const {createRequire} = require('module');
+const frontendRequire = createRequire(path.join(root, 'front-end/package.json'));
+const esbuild = frontendRequire('esbuild');
+const React = frontendRequire('react');
+const {renderToStaticMarkup} = frontendRequire('react-dom/server');
+(async () => {
+ const result = await esbuild.build({entryPoints:[path.join(root,'front-end/src/components/ProdutosTable.jsx')],bundle:true,write:false,platform:'node',format:'cjs',external:['react','react-icons/fa'],plugins:[{name:'auth-fixture',setup(build){build.onResolve({filter:/hooks\/useAuth$/},()=>({path:'auth',namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:'export const useAuth = () => ({ can: () => globalThis.productsTestAllowed });',loader:'js'}));}}]});
+ const exported = {exports:{}};
+ new Function('require','module','exports',result.outputFiles[0].text)(frontendRequire,exported,exported.exports);
+ const Table = exported.exports.default;
+ const props={produtos:[],loading:false,orderBy:'CODIGO',orderDir:'asc',setOrderBy(){},setOrderDir(){},onEdit(){},onDelete(){},onView(){}};
+ const assert = require('assert/strict');
+ assert.match(renderToStaticMarkup(React.createElement(Table,{...props,loading:true})),/Carregando/);
+ assert.match(renderToStaticMarkup(React.createElement(Table,props)),/Nenhum produto/);
+ const populated={...props,produtos:[{CODIGO:1,DESCRICAO:'Produto de teste',ESTOQUE_ATUAL:2}]};
+ globalThis.productsTestAllowed=false;
+ const readonly=renderToStaticMarkup(React.createElement(Table,populated));
+ assert.match(readonly,/Produto de teste/);
+ assert.equal((readonly.match(/disabled=""/g)||[]).length,2);
+ globalThis.productsTestAllowed=true;
+ const writable=renderToStaticMarkup(React.createElement(Table,populated));
+ assert.equal((writable.match(/disabled=""/g)||[]).length,0);
+ console.log('OK: carregamento, vazio, produtos com somente leitura e com permissao de escrita. Nenhum banco acessado.');
+})().catch(()=>{console.error('Teste de renderizacao falhou.');process.exitCode=1;});

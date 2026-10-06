@@ -20,8 +20,8 @@ const ProdutosTable = ({
   setOrderBy,
   setOrderDir,
 }) => {
-  const renderSortIcon = (col) => {
   const { can } = useAuth();
+  const renderSortIcon = (col) => {
     if (orderBy === col) {
       return orderDir === "asc" ? (
         <FaSortUp className="inline ml-1" />
