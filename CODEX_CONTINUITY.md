@@ -94,3 +94,23 @@ TAG: RETOMADA-20261006-GIT-CORRECOES
 - Estado PM2 dump.pm2 retirado do indice, sem apagar runtime original. .codex e pm2-teste-status.txt ignorados. .env, node_modules e builds fora do commit. Historico remoto nao reescrito.
 - Teste de renderizacao aprovado novamente; sintaxe PowerShell e git diff --check aprovados. Builds e verificacoes HTTP anteriores permanecem validacoes historicas desta sessao; nenhum deploy/migration executado nesta sincronizacao.
 - Envio deste commit e confirmacao do hash remoto serao feitos apos gravar este registro.
+
+### Recuperacao por e-mail e relatorios de cadastros — 2026-10-06
+TAG: RETOMADA-20261006-RECUPERACAO-CADASTROS
+- Usuario autorizou seguir sequencia de seguranca, recuperacao e relatorios CSV. SMTP inicialmente interno, depois sugeriu MailerSend; implementacao aceita SMTP externo.
+- Recuperacao de 15 minutos, chave distinta da sessao, vinculo ao hash da senha e atualizacao atomica para impedir reuso/concorrencia, sem migration. Resposta generica e limitadores; SMTP desativado ate configurar .env. Modelo sem credenciais em back-end/.env.recovery.example.
+- Nenhum e-mail enviado ou senha real alterada. Entrega real pendente de dominio/remetente/credenciais/URL no MailerSend. Nao pedir senhas no chat.
+- Ultimo administrador ativo protegido contra desativacao e rebaixamento, validado em banco simulado.
+- Relatorios → Cadastros · CSV: produtos/fornecedores/marcas/familias, busca/paginacao e filtros de produto. Exportacao completa ate 10.000, protegendo formulas/codigos de texto. Exige reports.read + consulta do cadastro, somente SELECT.
+- Builds backend/frontend e testes de recuperacao, administrador, CSV aprovados. Regressao de 79 requisicoes com perfis simulados, controllers de escrita bloqueados e consultas reais aprovada. Cadastros/banco de producao preservados.
+- Testes visuais/manuais permanecem pendentes; nao marcar checks automaticamente. XLSX/importacao continuam backlog. Sem commit/push ou deploy Windows nesta etapa.
+
+- Validacao local final: backend atualizado na porta 3000, /health 200, relatorio de cadastros sem sessao 401 e recuperacao sem SMTP configurado 503. Windows preservado. MailerSend confirmado compativel via SMTP 587/STARTTLS; dominio e credenciais ainda pendentes.
+
+### Commit para teste Windows — 2026-10-06
+TAG: RETOMADA-20261006-RECUPERACAO-COMMIT
+- Usuario optou pela Hostinger, sem MailerSend. SMTP configurado localmente, TLS/autenticacao aprovados; mensagem aceita para destinatario autorizado quando remetente corresponde a caixa SMTP. Remetente divergente foi recusado com 553.
+- Modelo de recuperacao atualizado para Hostinger 465; senha em .env restrito/ignorado, criptografia adicional adiada pelo usuario. Nunca publicar credenciais.
+- Usuario autorizou commit para testar no Windows. Configuracao SMTP nao acompanha git pull: preencher .env da instancia Windows e reiniciar API de testes. Sem migration nova e sem publicacao Windows nesta etapa.
+- Para atualizar a instancia de testes: git pull --ff-only origin main; npm ci em back-end/front-end; build backend; build frontend com VITE_API_BASE_URL=http://192.168.0.69:4301; reiniciar somente controle-estoque-2026-api-teste no PM2 existente. Frontend serve dist na porta 4174. Usar conta/PM2_HOME existentes; preservar 4300/4173.
+- Verificar cadastro CSV e fluxo de recuperacao real no navegador. APP_PUBLIC_URL deve corresponder ao frontend acessivel da instancia; SMTP_HOST/PORT/USER/PASSWORD/MAIL_FROM devem ser configurados no Windows, sem copiar automaticamente .env Linux.

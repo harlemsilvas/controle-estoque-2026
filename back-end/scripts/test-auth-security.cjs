@@ -1,6 +1,7 @@
 const path=require('path').resolve(__dirname,'..');
 require(path+'/node_modules/dotenv').config({path:path+'/.env'});
 const fs=require('fs'),crypto=require('crypto'),assert=require('assert/strict');
+process.env.PASSWORD_RECOVERY_ENABLED='false';
 const file=require('path').join(require('os').tmpdir(),'estoque-revocations-'+process.pid+'.json');process.env.SESSION_REVOCATION_FILE=file;
 const jwt=require(path+'/node_modules/jsonwebtoken'),bcrypt=require(path+'/node_modules/bcryptjs');
 (async()=>{
@@ -39,7 +40,8 @@ const jwt=require(path+'/node_modules/jsonwebtoken'),bcrypt=require(path+'/node_
  try{
   assert.equal((await call('/health')).status,200);
   for(const route of ['/produto','/fornecedor','/marca','/familia','/usuarios','/relatorio/movimentacoes','/produto-aggregate','/api-docs','/me'])assert.equal((await call(route)).status,401);
-  for(const route of ['/forcar-senha','/recuperar-senha','/reset-password'])assert.equal((await call(route,{method:'POST',body:{}})).status,410);
+  assert.equal((await call('/forcar-senha',{method:'POST',body:{}})).status,410);
+  for(const route of ['/recuperar-senha','/reset-password'])assert.equal((await call(route,{method:'POST',body:{}})).status,400);
   assert.equal((await call('/me',{token:'invalid'})).status,401);
   const expired=jwt.sign({id:123},security.jwtSecret(),{expiresIn:-10});assert.equal((await call('/me',{token:expired})).status,401);
   assert.equal((await call('/me',{token:jwt.sign({id:123},security.jwtSecret())})).status,401);
@@ -48,6 +50,16 @@ const jwt=require(path+'/node_modules/jsonwebtoken'),bcrypt=require(path+'/node_
   assert.equal((await call('/usuarios',{token:live})).status,403);
   for(const route of ['/produto','/fornecedor','/marca','/familia','/produto/1/fornecedor','/produtos/lixeira/1'])assert.equal((await call(route,{token:live,method:route.includes('fornecedor')&&route.startsWith('/produto/')?'PATCH':'POST',body:{}})).status,403);
   for(const route of ['/produto?limit=1','/fornecedor?limit=1','/marca?limit=1','/familia?limit=1','/produto-aggregate','/relatorio/movimentacoes?limit=1','/relatorio/movimentacoes?dataInicio=2026-10-05&dataFim=2026-10-05&format=csv'])assert.equal((await call(route,{token:live})).status,200);
+  for(const resource of ['produtos','fornecedores','marcas','familias']) {
+    const report=await call('/relatorio/cadastros/'+resource+'?limit=1',{token:live});assert.equal(report.status,200,resource);assert(Array.isArray(report.data.data));assert(Array.isArray(report.data.columns));assert(report.data.data.length<=1);
+    assert.equal((await call('/relatorio/cadastros/'+resource+'?format=csv',{token:live})).status,200,resource+' CSV');
+  }
+  const accessFunction=access.profilePermissions;
+  access.profilePermissions=async()=>({name:'Restrito',permissions:['reports.read']});
+  assert.equal((await call('/relatorio/cadastros/produtos',{token:live})).status,403);
+  access.profilePermissions=accessFunction;
+  assert.equal((await call('/relatorio/cadastros/produtos?page=999999999999',{token:live})).status,400);
+  assert.equal((await call('/relatorio/cadastros/produtos?marca=999999999999',{token:live})).status,400);
   current.role='readonly';
   assert.equal((await call('/produto?limit=1',{token:live})).status,200);
   assert.equal((await call('/me',{token:live})).data.user.profileName,'Somente leitura');

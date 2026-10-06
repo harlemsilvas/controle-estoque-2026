@@ -25,12 +25,18 @@ export async function atualizarRoleUsuario(id: number, role: string): Promise<vo
   } catch (error) { await tx.rollback(); throw error; }
 }
 export async function atualizarStatusUsuario(id: number, is_active: boolean): Promise<void> {
-  const pool = await connectToDatabase();
-  await pool
-    .request()
-    .input('id', sql.Int, id)
-    .input('is_active', sql.Bit, is_active ? 1 : 0)
-    .query('UPDATE users SET is_active = @is_active WHERE id = @id');
+  const pool = await connectToDatabase(), tx = new sql.Transaction(pool);
+  await tx.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
+  try {
+    const result = await new sql.Request(tx).query('SELECT id,role,is_active FROM users WITH (UPDLOCK,HOLDLOCK)');
+    const target = result.recordset.find(u => u.id === id);
+    if (!target) throw Object.assign(new Error('Usuário inexistente.'), { status: 404 });
+    if (!is_active && target.role === 'admin' && target.is_active && result.recordset.filter(u=>u.role === 'admin' && u.is_active).length <= 1)
+      throw Object.assign(new Error('Mantenha pelo menos um administrador ativo.'), { status: 409 });
+    await new sql.Request(tx).input('id',sql.Int,id).input('is_active',sql.Bit,is_active ? 1 : 0)
+      .query('UPDATE users SET is_active=@is_active WHERE id=@id');
+    await tx.commit();
+  } catch(error) { await tx.rollback(); throw error; }
 }
 import sql from 'mssql';
 import bcrypt from 'bcryptjs';

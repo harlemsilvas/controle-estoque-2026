@@ -1,5 +1,8 @@
 // ...existing code...
 import express from 'express';
+import { reportCadastros } from './controllers/cadastroReports';
+import { recover, reset } from './controllers/passwordController';
+import { recoveryLimit } from './middleware/recovery-limit';
 import cors from 'cors';
 import sql from 'mssql';
 import dotenv from 'dotenv';
@@ -111,9 +114,9 @@ app.post('/login', (req, res, next) => {
   res.on('finish', () => { if (res.statusCode < 400) attempts.delete(key); });
   next();
 }, authController.login);
-app.post(['/forcar-senha', '/recuperar-senha', '/reset-password'], (_req, res) => {
-  res.status(410).json({ error: 'Recuperação automática indisponível. Solicite redefinição ao administrador.' });
-});
+app.post('/forcar-senha', (_req, res) => res.status(410).json({ error: 'Use a redefinição administrativa autenticada.' }));
+app.post('/recuperar-senha', recoveryLimit(), recover);
+app.post('/reset-password', recoveryLimit(), reset);
 app.use(authenticateToken);
 app.get('/me', (req, res) => res.json({ user: (req as AuthRequest).user }));
 app.post('/logout', (req, res, next) => {
@@ -145,6 +148,7 @@ app.put('/perfis/:code', async (req, res, next) => {
 });
 
 // Relatório de movimentações de estoque
+app.get('/relatorio/cadastros/:resource', reportCadastros);
 app.get('/relatorio/movimentacoes', relatorioMovimentacoes);
 // Estoque resumo (15 mais e 15 menos)
 app.get('/estoque-produto', estoqueController.getEstoqueResumo);

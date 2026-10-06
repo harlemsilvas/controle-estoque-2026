@@ -1,7 +1,7 @@
 # Relatórios de cadastros e correções por planilha
 
 Data: 2026-10-05
-Status: backlog, sem urgência. Implementar depois de autenticação/autorização.
+Status: relatórios de cadastros + CSV implementados em 2026-10-06; XLSX/importação continuam no backlog.
 
 ## Objetivo
 
@@ -45,3 +45,13 @@ Relatórios práticos de produtos, fornecedores, marcas e famílias, com filtros
 - Erros apresentam código, linha/campo e motivo; não alteram dados fora do escopo.
 
 Nenhuma alteração de schema ou importação foi executada na especificação desta feature.
+
+## Entrega em 2026-10-06
+
+Menu Relatorios → Cadastros · CSV (/relatorios/cadastros). Produtos, fornecedores, marcas e familias, busca por codigo/nome/descricao; produtos tambem por codigo interno/barras e filtros por codigo de fornecedor/marca/familia. Paginas de 25 registros, exportacao de todos os resultados dos filtros aplicados, limitada a 10.000 (retorna erro se exceder, sem truncar silenciosamente).
+
+API GET /relatorio/cadastros/:resource exige reports.read e permissao de consulta do cadastro correspondente. Somente SELECT, sem alteracao no banco. Produtos excluidos ficam fora; referencias inexistentes nao excluem o produto por usar LEFT JOIN.
+
+CSV UTF-8 BOM, delimitador ponto e virgula, aspas e protecao de formulas. Codigo interno/barras, CNPJ e telefone recebem apostrofo para preservar texto/zeros a esquerda no Excel; esta convencao devera ser considerada na importacao futura. Estoque atual e apenas consulta.
+
+Testes de API com consultas reais e mutacoes bloqueadas, CSV com dados ficticios e builds aprovados. Validacao visual/Excel pendente. XLSX e importacao nao implementados nesta etapa.

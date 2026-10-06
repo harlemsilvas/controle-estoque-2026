@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
+import RelatorioCadastros from "./pages/RelatorioCadastros";
 import MeusAcessos from "./pages/MeusAcessos";
 import AdminPerfis from "./pages/Admin/AdminPerfis";
 import PermissionRoute from "./components/PermissionRoute";
@@ -169,6 +170,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           />
 
           <Route path="/relatorios" element={<ProtectedRoute><Header /><PermissionRoute permission="reports.read"><RelatorioMovimentacoes /></PermissionRoute></ProtectedRoute>} />
+          <Route path="/relatorios/cadastros" element={<PermissionRoute permission="reports.read"><RelatorioCadastros /></PermissionRoute>} />
           <Route path="/relatorios/movimentacoes" element={<Navigate to="/relatorios" replace />} />
 
           <Route path="/conta/acessos" element={<ProtectedRoute><MeusAcessos /></ProtectedRoute>} />

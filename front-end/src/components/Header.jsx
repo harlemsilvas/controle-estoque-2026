@@ -40,7 +40,7 @@ export default function Header({ title, btnText, btnPath }) {
     return () => document.removeEventListener("click", outside);
   }, []);
   const registrations = [{ permission: "products.read", label: "Produtos", to: "/produtos" }, { permission: "brands.read", label: "Marcas", to: "/marcas" }, { permission: "families.read", label: "Famílias", to: "/familias" }, { permission: "suppliers.read", label: "Fornecedores", to: "/fornecedores" }];
-  const reports = [{ label: "Movimentações de estoque", to: "/relatorios" }, ...(can("reports.read") ? [
+  const reports = [{ label: "Cadastros · CSV", to: "/relatorios/cadastros" }, { label: "Movimentações de estoque", to: "/relatorios" }, ...(can("reports.read") ? [
     { label: "Por fornecedor", to: "/relatorios/fornecedores" }, { label: "Por marca", to: "/relatorios/marcas" },
     { label: "Por família", to: "/relatorios/familias" }, ...(showAdmin ? [{ label: "Todos os relatórios", to: "/admin/relatorios" }] : [])
   ] : [])];

@@ -1,3 +1,5 @@
+> Documento historico do IIS. Para testes atuais por PM2/IP, use docs/teste-pm2-ip.md e iniciar-teste-pm2.ps1. Para uma publicacao futura no IIS, use DEPLOY-IIS.md revisado. Os status e portas abaixo nao representam validacao atual.
+
 # 🎯 DEPLOY - Procedimento Rápido
 
 ## Status ✅ Concluído

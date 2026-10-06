@@ -1,7 +1,7 @@
 # Autenticação e autorização — prioridade atual
 
 Data: 2026-10-05
-Status: proteção básica implementada e 51 testes HTTP aprovados; validação manual e recuperação automática por token pendentes.
+Status: proteção por perfis e recuperação por token implementadas; regressão atual com 79 requisições HTTP. Configuração SMTP e validação manual pendentes.
 
 ## Achados anteriores à implementação
 
@@ -36,3 +36,5 @@ Status: proteção básica implementada e 51 testes HTTP aprovados; validação 
 - Limite de 10 tentativas de login em 15 minutos por IP; limite depende de TRUST_PROXY=1 apenas quando existe exatamente um proxy confiável. Não alterado ambiente IIS/produção.
 - Teste: npm run test:auth no backend, com banco de leitura acessível e DB_SERVER ajustado ao ambiente. Usa usuários simulados, SELECTs reais e arquivo temporário; não grava usuários/cadastros.
 - Recuperação automática por token de uso único continua pendente; para redefinir senha, usar administração de usuários.
+
+Atualizacao 2026-10-06: autenticacao usa permissoes configuraveis por recurso/acao (as regras fixas admin acima sao historicas). Recuperacao implementada conforme 004-recuperacao-senha.md; SMTP ainda desativado sem configuracao. Protecao do ultimo administrador ativo cobre rebaixamento de perfil e desativacao de usuario; testes usam banco simulado. Validacao manual nao e substituida pelos testes automatizados.

@@ -12,7 +12,10 @@
     "test:db": "npm run build && node dist/test-db-connection.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:auth": "npm run build && node scripts/test-auth-security.cjs",
-    "test:profiles": "npm run build && node scripts/test-access-profiles.cjs"
+    "test:profiles": "npm run build && node scripts/test-access-profiles.cjs",
+    "test:recovery": "npm run build && node scripts/test-password-recovery.cjs",
+    "test:admin": "npm run build && node scripts/test-admin-guards.cjs",
+    "test:csv": "npm run build && node scripts/test-cadastro-csv.cjs"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +29,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mssql": "^11.0.1",
+    "nodemailer": "^10.0.15",
     "swagger-jsdoc": "6.2.8",
     "swagger-ui-express": "5.0.1"
   },
@@ -36,6 +40,7 @@
     "@types/jsonwebtoken": "9.0.10",
     "@types/mssql": "9.1.8",
     "@types/node": "24.5.1",
+    "@types/nodemailer": "^8.0.2",
     "@types/swagger-jsdoc": "6.0.4",
     "@types/swagger-ui-express": "4.1.8",
     "eslint": "9.35.0",

@@ -67,3 +67,6 @@ deploy/production/frontend/dist/
 # Diagnosticos e clones locais do Codex
 /.codex/
 /pm2-teste-status.txt
+
+# Modelo de configuracao de recuperacao, sem credenciais
+!back-end/.env.recovery.example
