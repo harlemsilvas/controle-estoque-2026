@@ -70,3 +70,7 @@ deploy/production/frontend/dist/
 
 # Modelo de configuracao de recuperacao, sem credenciais
 !back-end/.env.recovery.example
+
+# Versoes de runtime preparadas e segredos locais alternativos
+/deploy/production/releases/
+.env_*

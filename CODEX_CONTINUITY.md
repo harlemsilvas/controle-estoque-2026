@@ -114,3 +114,24 @@ TAG: RETOMADA-20261006-RECUPERACAO-COMMIT
 - Usuario autorizou commit para testar no Windows. Configuracao SMTP nao acompanha git pull: preencher .env da instancia Windows e reiniciar API de testes. Sem migration nova e sem publicacao Windows nesta etapa.
 - Para atualizar a instancia de testes: git pull --ff-only origin main; npm ci em back-end/front-end; build backend; build frontend com VITE_API_BASE_URL=http://192.168.0.69:4301; reiniciar somente controle-estoque-2026-api-teste no PM2 existente. Frontend serve dist na porta 4174. Usar conta/PM2_HOME existentes; preservar 4300/4173.
 - Verificar cadastro CSV e fluxo de recuperacao real no navegador. APP_PUBLIC_URL deve corresponder ao frontend acessivel da instancia; SMTP_HOST/PORT/USER/PASSWORD/MAIL_FROM devem ser configurados no Windows, sem copiar automaticamente .env Linux.
+
+### Confirmacao local preservada da sessao anterior (historico)
+Confirmacao atual do envio: commit 55ce2bf8220c76fa62b628ad13a8df8727a22dfc enviado a origin/main; git ls-remote confirmou o mesmo hash. Clone .codex/repo-sync sem alteracoes pendentes. Esta confirmacao posterior ao push permanece no registro local; o registro preparado antes do envio foi incluido no commit.
+
+### Reconstrucao Git e atualizacao local — 2026-10-07
+TAG: RETOMADA-20261007-GIT-RECONSTRUIDO
+- Usuario solicitou aplicar atualizacao feita em outro computador e reconstruir .git confiavel nesta pasta.
+- .git ausente reconstruido com metadados do clone oficial .codex/repo-sync; origem https://github.com/harlemsilvas/controle-estoque-2026.git. Historico verificado; main atualizada por fast-forward de 55ce2bf para 1883bf1 (recuperacao SMTP e relatorios de cadastros CSV).
+- Indice renormalizado para arquivos LF; core.autocrlf=input apenas neste repositorio. Conteudo local coincidia com a base, exceto confirmacao posterior ao push em CODEX_CONTINUITY.md. Registro preservado acima, em backup .codex/git-recovery-20261007 e stash nomeado. Nenhuma alteracao local descartada.
+- .env, dependencias, builds e runtime preservados; pasta C:\controle-estoque nao alterada. Nenhum deploy, migration, envio de e-mail ou reinicio PM2 realizado nesta atualizacao. Serviços podem continuar executando a compilacao anterior.
+- Pendencias: instalar nova dependencia SMTP/backend e compilar/testar quando solicitado; configurar SMTP e APP_PUBLIC_URL no .env Windows sem compartilhar segredos; validar recuperacao e CSV no navegador. Checks atuais desta etapa sao integridade Git, origem/branch/hash e protecao dos arquivos locais; builds/testes de outras maquinas sao historicos.
+
+### Automacao de atualizacao e inicializacao PM2 — 2026-10-07
+TAG: RETOMADA-20261007-STARTUP-AUTOMATICO
+- Usuario solicitou script de atualizacao Git, dependencias frontend/backend, recompilacao e PM2; sugeriu renomear pasta antiga para controle-estoque-backup e nova para controle-estoque. Renomeacao nao executada; roteiro concreto em docs/inicializacao-atualizacao-pm2.md.
+- Usuario solicitou excluir .env_estoque: arquivo removido por caminho literal validado, sem leitura/registro do conteudo. back-end/.env preservado. Adicionada protecao .env_* no ignore.
+- Criado atualizar-iniciar.ps1: main/origin oficiais, fast-forward e guarda de alteracoes locais; npm ci dos dois componentes em releases separados, builds, preflight somente leitura, PM2 restrito aos dois nomes, health/frontend, versao anterior em falhas. Modo -Preparar nao altera PM2/fontes; -SemAtualizacao usa HEAD.
+- Preparacao real aprovada para 1883bf1, portas 4301/4174: dependencias, builds e preflight do banco concluido. Release isolado em deploy/production/releases/1883bf1f79b6-3c37924b. Nenhuma migration, e-mail ou escrita em cadastros realizada.
+- Usuario informou que tarefa de boot ja existe. Criado atualizar-tarefa-inicializacao.ps1 para alterar somente a acao da tarefa existente (padrao ControleEstoqueStack), preservando usuario/gatilhos/configuracoes. Nao foi criada/alterada tarefa nesta etapa.
+- Helpers scripts/pm2-control.cjs e scripts/serve-site.cjs; tests/test-startup.cjs aprovado com PM2 simulado (consulta sem segredos, preservacao online, troca e rollback) e HTTP temporario (SPA/assets/404/travessia). Sintaxe PowerShell/Node validada. Releases/logs/configuracoes locais ignorados.
+- Pendencias: revisar/salvar os scripts no Git antes de ativar atualizacao operacional (recusa arquivos versionados alterados); validar troca de runtime em PM2; decidir/executar troca de pastas com parada dos processos e atualizacao da tarefa no caminho final. Nada foi publicado no GitHub nesta etapa. Tarefa antiga e instancias em execucao preservadas.
