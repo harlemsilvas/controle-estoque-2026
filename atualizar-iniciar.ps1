@@ -188,7 +188,3 @@ try {
   $env:NODE_OPTIONS = $oldOptions
   if ($lock) { $lock.Dispose() }
 }
-
-
-
-

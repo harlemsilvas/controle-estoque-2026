@@ -22,7 +22,7 @@ $backup=$bootstrap+'.before-automation.bak'
 if(-not(Test-Path -LiteralPath $backup)){Copy-Item -LiteralPath $bootstrap -Destination $backup}
 # Atualizar o roteiro ja chamado pela tarefa: preservar inclusive sua senha Windows armazenada.
 $runner=(Join-Path $root 'atualizar-iniciar.ps1').Replace("'","''")
-$home=([string]$state.pm2Home).Replace("'","''")
-$delegate="param([switch]`$SemAtualizacao)`n`$ErrorActionPreference='Stop'`n& '$runner' -ApiHost '$ApiHost' -Pm2Home '$home' -SemAtualizacao:`$SemAtualizacao`n"
+$taskPm2Home=([string]$state.pm2Home).Replace("'","''")
+$delegate="param([switch]`$SemAtualizacao)`n`$ErrorActionPreference='Stop'`n& '$runner' -ApiHost '$ApiHost' -Pm2Home '$taskPm2Home' -SemAtualizacao:`$SemAtualizacao`n"
 Set-Content -LiteralPath $bootstrap -Value $delegate -Encoding utf8
 Write-Host ('Roteiro da tarefa existente atualizado: '+$TaskName+'. Conta, senha armazenada, gatilhos e acao preservados.')

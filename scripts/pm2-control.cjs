@@ -45,6 +45,3 @@ function previousOptions(app) {
   }
 })().catch(() => { console.error('PM2: operacao falhou; detalhes sensiveis omitidos.'); process.exitCode = 1; })
 .finally(() => pm2.disconnect());
-
-
-
