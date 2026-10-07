@@ -135,3 +135,10 @@ TAG: RETOMADA-20261007-STARTUP-AUTOMATICO
 - Usuario informou que tarefa de boot ja existe. Criado atualizar-tarefa-inicializacao.ps1 para alterar somente a acao da tarefa existente (padrao ControleEstoqueStack), preservando usuario/gatilhos/configuracoes. Nao foi criada/alterada tarefa nesta etapa.
 - Helpers scripts/pm2-control.cjs e scripts/serve-site.cjs; tests/test-startup.cjs aprovado com PM2 simulado (consulta sem segredos, preservacao online, troca e rollback) e HTTP temporario (SPA/assets/404/travessia). Sintaxe PowerShell/Node validada. Releases/logs/configuracoes locais ignorados.
 - Pendencias: revisar/salvar os scripts no Git antes de ativar atualizacao operacional (recusa arquivos versionados alterados); validar troca de runtime em PM2; decidir/executar troca de pastas com parada dos processos e atualizacao da tarefa no caminho final. Nada foi publicado no GitHub nesta etapa. Tarefa antiga e instancias em execucao preservadas.
+
+### Ativacao em pasta preservada — 2026-10-07
+TAG: RETOMADA-20261007-PRODUCAO-PREPARADA
+- Registro anterior de preparacao e historico. Automacao enviada em dd60e8a; release deste commit compilado e preflight de leitura aprovado nas portas 4300/4173.
+- Tentativas de renomeacao revertidas porque C:\controle-estoque-2026 estava em uso. Pastas originais e quatro processos restaurados; tarefa reabilitada. Usuario escolheu manter C:\controle-estoque-2026 e ativar producao nela. Nao repetir renomeacao.
+- Roteiro da tarefa existente sera atualizado por delegacao no bootstrap, preservando a senha Windows armazenada e a definicao da tarefa. Removida exigencia geral de administrador do atualizador: acesso efetivo ao daemon determina permissao. APP_PUBLIC_URL acompanha o frontend de producao.
+- Testes PM2/HTTP e sintaxe PowerShell aprovados novamente. Pendencia atual: ativar release, validar HTTP, adaptar bootstrap e encerrar apenas instancias de teste. Sem migrations ou exposicao de .env.

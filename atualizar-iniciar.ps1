@@ -123,13 +123,12 @@ try {
   $config = Join-Path $release 'ecosystem.json'
   $sessionFile = Join-Path $repoRoot 'logs\session-revocations.json'
   $apps = @(
-    @{name=$BackendName;script=(Join-Path $backend 'dist\app.js');cwd=$backend;interpreter=$node;watch=$false;autorestart=$true;restart_delay=5000;env=@{NODE_ENV='production';PORT="$BackendPort";SESSION_REVOCATION_FILE=$sessionFile}},
+    @{name=$BackendName;script=(Join-Path $backend 'dist\app.js');cwd=$backend;interpreter=$node;watch=$false;autorestart=$true;restart_delay=5000;env=@{NODE_ENV='production';PORT="$BackendPort";APP_PUBLIC_URL=("http://" + $ApiHost + ":" + $FrontendPort);SESSION_REVOCATION_FILE=$sessionFile}},
     @{name=$FrontendName;script=(Join-Path $release 'serve-site.cjs');cwd=$release;interpreter=$node;watch=$false;autorestart=$true;restart_delay=5000;env=@{NODE_ENV='production';FRONTEND_PORT="$FrontendPort";FRONTEND_ROOT=(Join-Path $frontend 'dist')}}
   )
   @{apps=$apps} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $config -Encoding utf8
   if ($Preparar) { Status ('PREPARADO: ' + $release + '. PM2 e fontes nao alterados.'); return }
-  $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-  if (-not ([Security.Principal.WindowsPrincipal]::new($identity)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Execute como administrador ou SYSTEM para acessar o PM2.' }
+  # A conta da tarefa pode controlar seu proprio daemon sem UAC; a API PM2 valida o acesso real.
   $stage = 'validacao PM2'
   $knownJson = (& $node (Join-Path $repoRoot 'scripts\pm2-control.cjs') $pm2Module 'list' | Out-String)
   if ($LASTEXITCODE -ne 0) { throw 'Sem acesso ao PM2 existente.' }
@@ -189,5 +188,7 @@ try {
   $env:NODE_OPTIONS = $oldOptions
   if ($lock) { $lock.Dispose() }
 }
+
+
 
 

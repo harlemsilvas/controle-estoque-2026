@@ -1,81 +1,39 @@
-# Atualizacao e inicializacao com PM2
+# Inicializacao e atualizacao com PM2
 
-Roteiro preparado em 2026-10-07. Scripts criados e testados; alteracao da tarefa existente e troca de pastas ainda nao executadas. IIS fica fora deste fluxo.
+A producao permanece em C:\controle-estoque-2026, por escolha do usuario. C:\controle-estoque permanece preservada com o runtime anterior e o PM2_HOME existente. IIS nao participa deste fluxo.
 
 ## Atualizar e iniciar
 
-`atualizar-iniciar.ps1` consulta origin/main, exige a main oficial e arquivos versionados sem alteracoes, instala dependencias backend/frontend e compila em um release separado. Usa VITE_API_BASE_URL com IP/porta da API, verifica configuracao/banco somente por leitura e troca apenas os dois nomes PM2 configurados. Nao executa migrations, envia e-mails, instala PM2 globalmente ou libera portas encerrando processos.
-
-Se a rede, instalacao ou build falhar, inicia/preserva o ultimo release validado, quando existir. A primeira ativacao exige preparacao bem-sucedida. Se a nova versao falhar no health/frontend, restaura os dois processos anteriores. O backend le uma copia da configuracao local de back-end/.env no release; senhas nao sao exibidas. Alteracoes nesse arquivo exigem nova execucao do script. Logs e revogacoes ficam fora dos releases, em logs/. Releases antigos sao preservados; nao ha exclusao automatica.
-
-O script instala dependencias com npm ci --include=dev --ignore-scripts nos dois componentes em cada execucao e remove dependencias de desenvolvimento do backend de runtime. Scripts de instalacao npm nao sao executados automaticamente; se uma dependencia futura exigir isso, revisar antes de habilitar. Requer Node 22.16+ com --use-system-ca, Git, npm e PM2 previamente instalados. Nao desabilita TLS.
-
-Use PowerShell administrador ou a conta SYSTEM existente. Nao iniciar outro daemon PM2 concorrente: no Windows os pipes sao fixos. O script nao depende de pm2 resurrect nem pm2 save.
-
-### Preparar sem alterar processos ou fontes
+Em PowerShell com acesso ao daemon PM2 existente:
 
 ```powershell
 Set-Location C:\controle-estoque-2026
-.\atualizar-iniciar.ps1 -Preparar -SemAtualizacao -BackendPort 4301 -FrontendPort 4174
+.\atualizar-iniciar.ps1 -Pm2Home C:\controle-estoque\deploy\production\.pm2
 ```
 
-Esse modo compila o commit HEAD, nao alteracoes locais ainda nao commitadas. Tambem verifica o banco configurado, somente com SELECT. O preparo real foi aprovado nesta maquina em 2026-10-07 para o commit 1883bf1.
+O roteiro consulta origin/main, exige main oficial e arquivos versionados sem alteracoes, instala dependencias do backend e frontend com npm ci, compila em release separado e verifica o banco somente por leitura. Usa as portas 4300/4173 e substitui somente controle-estoque-backend/frontend. Endereco: http://192.168.0.69:4173. Para mudar o IP, informar -ApiHost; APP_PUBLIC_URL do runtime acompanha esse endereco.
 
-### Atualizar a instancia de teste
+A configuracao local back-end/.env e copiada sem exibir seu conteudo. Nenhuma migration e executada. Falhas de rede/build preservam o ultimo release validado; falhas de inicializacao restauram os processos anteriores. Releases e logs ficam fora do Git. O estado confirmado fica em logs/startup/active-release.json; logs/startup/status.txt informa a etapa.
 
-Salvar/enviar os arquivos versionados pendentes antes: o modo operacional recusa alteracoes locais e divergencia com origin/main. Nao usar git reset --hard nem git add . para contornar. Os scripts desta tarefa ainda precisam ser revisados e salvos no Git antes de ativar a atualizacao automatica.
+Requer Node 22.16+, Git, npm e PM2 instalados. Nao desabilita TLS; usa --use-system-ca. npm ci usa --ignore-scripts e o backend final remove dependencias de desenvolvimento. Nao iniciar daemon concorrente: Windows usa pipes PM2 fixos. Nao depende de pm2 save/resurrect.
 
-```powershell
-.\atualizar-iniciar.ps1 -BackendPort 4301 -FrontendPort 4174 `
-  -BackendName controle-estoque-2026-api-teste `
-  -FrontendName controle-estoque-2026-web-teste `
-  -Pm2Home C:\controle-estoque\deploy\production\.pm2
-```
+## Tarefa existente
 
-### Producao, apos migracao aprovada
+A tarefa ControleEstoqueStack conserva conta, senha Windows armazenada, gatilhos e acao. O arquivo startup-bootstrap.ps1 que ela ja executa passa a chamar o atualizador nesta pasta, com o PM2_HOME existente. O bootstrap anterior e preservado em .before-automation.bak. Nenhuma tarefa adicional e criada.
 
-```powershell
-Set-Location C:\controle-estoque
-.\atualizar-iniciar.ps1
-```
-
-Portas padrao: API 4300, frontend 4173. Nomes: controle-estoque-backend/frontend. Ajustar APP_PUBLIC_URL no back-end/.env para o endereco final antes de testar a recuperacao SMTP; o script nao altera essa configuracao. URL: http://192.168.0.69:4173. Para mudar o IP, use -ApiHost. Confirmacao: logs/startup/status.txt e logs/startup/active-release.json. Os arquivos nao contem credenciais. O estado so e aceito depois de health e frontend retornarem 200. Fonte Git pode avancar mesmo se o runtime precisar voltar a versao anterior; o status registra essa falha.
-
-## Atualizar a tarefa existente no Windows
-
-O usuario informou que a tarefa de inicializacao ja existe. Reutilizar essa tarefa: nenhuma segunda tarefa sera criada. O script atualizar-tarefa-inicializacao.ps1 agora so altera a acao da tarefa selecionada, preservando gatilho, usuario e configuracoes. O nome padrao nos scripts anteriores e ControleEstoqueStack; usar -TaskName se o nome for outro, com prefixo ControleEstoque.
-
-Somente depois de validar o release nas portas 4300/4173 e confirmar o caminho final:
+Depois de validar a producao, a atualizacao do bootstrap pode ser repetida em PowerShell administrador:
 
 ```powershell
 .\atualizar-tarefa-inicializacao.ps1 -TaskName ControleEstoqueStack
 ```
 
-A conta da tarefa precisa de acesso ao repositorio, rede e ferramentas. Em repositorio privado, SYSTEM pode nao ter as credenciais Git do usuario; configurar esse acesso pela operacao, sem tokens no script. O ultimo release validado permite iniciar a versao anterior se a consulta ao GitHub falhar. A tarefa existente nao foi alterada nesta implementacao. Se for desabilitada temporariamente para mover pastas, reabilitar somente depois da nova acao e dos caminhos finais validados.
+A conta da tarefa precisa de acesso ao GitHub, ferramentas e PM2. O ultimo release validado permite iniciar mesmo se a atualizacao falhar. Em operacoes manuais, usar a mesma permissao da sessao PM2; o roteiro verifica acesso efetivo sem exigir administrador em todo boot.
 
-## Trocar as pastas
-
-Sim, a estrutura final pode ser C:\controle-estoque (nova versao) e C:\controle-estoque-backup (versao anterior). A troca implica indisponibilidade e deve ser uma etapa separada, depois de validar a instancia de teste e salvar as correcoes no Git.
-
-1. Confirmar que o backup nao existe e que os unicos processos do daemon sao as duas instancias conhecidas de estoque. Se houver outros aplicativos PM2, interromper a migracao e planejar sem encerrar o daemon compartilhado.
-2. Registrar o estado das tarefas atuais e desabilitar as de boot antigas durante a troca. Preservar configuracao e revogacoes da versao publicada, sem exibir conteudos. Banco permanece compartilhado; a troca nao faz copia ou migration do banco.
-3. Em PowerShell administrador, com PM2_HOME antigo, parar os quatro nomes especificos de producao/teste. Encerrar o daemon somente se confirmado que nao gerencia outros aplicativos. Nao mover pastas enquanto Node/PM2 ainda as utiliza.
-4. Sair da pasta atual para C:\. Verificar os caminhos absolutos exatos antes de mover:
+## Preparacao e verificacoes
 
 ```powershell
-Set-Location C:\
-if (Test-Path -LiteralPath C:\controle-estoque-backup) { throw 'Backup ja existe; nao sobrescrever.' }
-Move-Item -LiteralPath C:\controle-estoque -Destination C:\controle-estoque-backup
-Move-Item -LiteralPath C:\controle-estoque-2026 -Destination C:\controle-estoque
+.\atualizar-iniciar.ps1 -Preparar -SemAtualizacao
+node tests/test-startup.cjs
 ```
 
-5. Executar atualizar-iniciar.ps1 no caminho final. O script calcula os caminhos de release a partir da propria pasta. Nao usar configs/dumps antigos com caminhos apontando para controle-estoque-2026 ou backup.
-6. Validar health, login, Produtos, relatorios CSV e recuperacao SMTP. Atualizar a acao da tarefa existente so depois dessa validacao. Guardar a pasta backup para restauracao, sem rodar as duas versoes na mesma porta.
-
-A renomeacao nao foi executada. Nao ligar o computador com tarefas antigas apontando para pastas renomeadas antes de concluir a troca. HTTP pela LAN nao cifra senhas/tokens; usar apenas rede confiavel enquanto HTTPS nao estiver configurado.
-
-## Testes locais
-
-`node tests/test-startup.cjs`: PM2 simulado (consulta sem segredos, preservacao, troca e restauracao apos falha) e servidor estatico em porta temporaria (SPA/assets/404/travessia). Sintaxe PowerShell e Node validada. Preparacao real inclui npm ci dos dois componentes, builds e preflight de leitura; nao houve ativacao PM2 nesta tarefa.
-
-
+Preparar compila HEAD em release separado e nao altera processos nem fontes. Testes verificam troca/restauracao PM2 simulado e servidor HTTP temporario. A preparacao real de dd60e8a nesta maquina aprovou instalacao, builds dos dois componentes e preflight de leitura. Login, Produtos, CSV e recuperacao SMTP devem ser conferidos no navegador; essas verificacoes manuais nao sao substituidas pelo health.

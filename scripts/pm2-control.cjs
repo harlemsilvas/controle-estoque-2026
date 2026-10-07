@@ -7,7 +7,7 @@ const call = (method, ...args) => new Promise((resolve, reject) => pm2[method](.
 function previousOptions(app) {
   const e = app.pm2_env;
   const env = {};
-  for (const key of ['NODE_ENV','PORT','FRONTEND_PORT','FRONTEND_ROOT','SESSION_REVOCATION_FILE','PM2_SERVE_PATH','PM2_SERVE_PORT','PM2_SERVE_SPA']) {
+  for (const key of ['NODE_ENV','PORT','FRONTEND_PORT','FRONTEND_ROOT','SESSION_REVOCATION_FILE','APP_PUBLIC_URL','PM2_SERVE_PATH','PM2_SERVE_PORT','PM2_SERVE_SPA']) {
     if (e[key] !== undefined) env[key] = e[key];
     else if (e.env && e.env[key] !== undefined) env[key] = e.env[key];
   }
@@ -45,5 +45,6 @@ function previousOptions(app) {
   }
 })().catch(() => { console.error('PM2: operacao falhou; detalhes sensiveis omitidos.'); process.exitCode = 1; })
 .finally(() => pm2.disconnect());
+
 
 
